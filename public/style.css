@@ -35,6 +35,12 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 .empty{color:var(--mute);font-size:12px;padding:10px;text-align:center}
 .avail-no{background:var(--badbg)}
 @media(max-width:720px){.day{grid-template-columns:70px 1fr}.day .shift:nth-child(3){grid-column:2}.hide-m{display:none}}
+/* Spielplan */
+.sp-week{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;overflow-x:auto;align-items:start}
+.sp-day{border:1px solid var(--line);border-radius:10px;padding:6px;min-width:0}.sp-day.today{background:var(--warnbg)}
+.sp-h{font-weight:600;padding:2px 4px 6px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.sp-ev{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:4px 8px;margin-bottom:6px;background:var(--card)}
+.sp-time{font-weight:700}.sp-title{font-size:14px;overflow-wrap:anywhere}
 /* Drawer */
 .drawer-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:30}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:var(--bg);z-index:31;overflow:auto;padding:16px;padding-bottom:40px;box-shadow:-4px 0 20px rgba(0,0,0,.2)}

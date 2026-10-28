@@ -279,12 +279,21 @@ function personForm(p) {
 }
 
 // ---------- Spielplan ----------
+const addDays = (d, n) => { const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() + n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
 async function viewSpielplan(m) {
   const perfs = await api('/performances');
   const byDate = {}; for (const p of perfs) (byDate[p.date] ||= []).push(p);
-  m.innerHTML = `<div class="card"><div class="row"><h2 style="margin:0">Spielplan</h2><span class="mute">${perfs.length} Vorstellungen</span>${isAdmin() ? `<button class="right small" id="imp">Von maerchenhuetten.com einlesen</button><button class="small" id="csv">CSV einfügen</button><button class="small" id="addP">+ Vorstellung</button>` : ''}</div>
+  for (const d in byDate) byDate[d].sort((a, b) => a.time.localeCompare(b.time));
+  S.spStart ||= today();
+  const days = Array.from({ length: 5 }, (_, i) => addDays(S.spStart, i));
+  const n = days.reduce((c, d) => c + (byDate[d]?.length || 0), 0);
+  m.innerHTML = `<div class="card"><div class="row"><h2 style="margin:0">Spielplan</h2>${isAdmin() ? `<button class="right small" id="imp">Von maerchenhuetten.com einlesen</button><button class="small" id="csv">CSV einfügen</button><button class="small" id="addP">+ Vorstellung</button>` : ''}</div>
     <p class="mute">Aus dem Spielplan entstehen die Schichten automatisch: Vorstellungen vor ${S.rules.day_cutoff} Uhr → Tagschicht, danach → Abendschicht. Schichtbeginn = erste Vorstellung, Ende = letzte Vorstellung + ${S.rules.after_min} min.</p>
-    ${Object.entries(byDate).map(([d, ps]) => `<div class="row" style="border-bottom:1px solid var(--line);padding:4px 0"><b style="width:90px">${fmtD(d)}</b><div class="grow">${ps.map(p => `<span class="mute" style="margin-right:10px;white-space:nowrap">${p.time} ${esc(p.title)}${isAdmin() ? ` <a href="#" data-delp="${p.id}" style="color:var(--bad)">✕</a>` : ''}</span>`).join('')}</div></div>`).join('')}</div>`;
+    <div class="plan-controls"><button id="spPrev">‹</button><button id="spToday" class="small">Heute</button><button id="spNext">›</button><b>${fmtD(days[0])} – ${fmtD(days[4])}</b><span class="mute">${n} Vorstellungen · ${perfs.length} gesamt</span></div>
+    <div class="sp-week">${days.map(d => `<div class="sp-day ${d === today() ? 'today' : ''}"><div class="sp-h">${fmtD(d)}</div>${(byDate[d] || []).map(p => `<div class="sp-ev"><div class="sp-time">${esc(p.time)}${isAdmin() ? ` <a href="#" data-delp="${p.id}" style="color:var(--bad)" title="Löschen">✕</a>` : ''}</div><div class="sp-title">${esc(p.title)}</div>${p.audience ? `<div class="mute">${esc(p.audience)}</div>` : ''}</div>`).join('') || '<div class="empty">–</div>'}</div>`).join('')}</div></div>`;
+  $('#spPrev').onclick = () => { S.spStart = addDays(S.spStart, -5); renderView(); };
+  $('#spNext').onclick = () => { S.spStart = addDays(S.spStart, 5); renderView(); };
+  $('#spToday').onclick = () => { S.spStart = today(); renderView(); };
   if (!isAdmin()) return;
   $('#imp').onclick = async () => { toast('Lese Spielplan…'); try { const r = await api('/performances/import', { method: 'POST' }); if (r.ok) toast(`${r.read} gelesen, ${r.added} neu, ${r.shifts} Schichten angelegt`); else toast(r.error, true); } catch (e) { toast(e.message, true); } };
   $('#csv').onclick = async () => { const csv = prompt('Zeilen im Format JJJJ-MM-TT;HH:MM;Titel;Zielgruppe (eine pro Zeile, mit Umbruch einfügen):'); if (!csv) return; const r = await api('/performances', { method: 'POST', body: { csv } }); toast(`${r.added} Termine, ${r.shifts} Schichten neu`); renderView(); };
