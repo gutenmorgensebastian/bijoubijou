@@ -25,6 +25,9 @@ if [ -d .git ] && command -v git >/dev/null 2>&1; then
     if [ "$(git branch --show-current)" != "main" ]; then git checkout -q main 2>/dev/null; fi
     if git merge -q --ff-only origin/main 2>/dev/null; then echo "Version: $(git log --oneline -1)"; else echo "Hinweis: Update übersprungen (lokale Änderungen?)."; fi
   else echo "Hinweis: kein Internet, starte mit vorhandener Version."; fi
+else
+  echo "ACHTUNG: Dieser Ordner ist keine Git-Kopie (z. B. aus einer ZIP-Datei)."
+  echo "         Er wird NICHT automatisch aktualisiert. Version: $(cat VERSION 2>/dev/null || echo unbekannt)"
 fi
 
 PORT=${PORT:-3080}
