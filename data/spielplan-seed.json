@@ -1,0 +1,2054 @@
+[
+ {
+  "date": "2026-11-13",
+  "time": "19:00",
+  "title": "Kaiser Trojan hat Ziegenohren / Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-13",
+  "time": "19:30",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-13",
+  "time": "21:15",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-14",
+  "time": "19:00",
+  "title": "Kaiser Trojan hat Ziegenohren / Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-14",
+  "time": "19:30",
+  "title": "Ayşenbrödel & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-14",
+  "time": "21:00",
+  "title": "Fischer un sin Fru & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-15",
+  "time": "15:30",
+  "title": "Frau Holle für Kinder & Die Schneekönigin",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-15",
+  "time": "19:30",
+  "title": "Rumpelstilzchen & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-17",
+  "time": "09:30",
+  "title": "Die Schneekönigin & Hase und Igel",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-17",
+  "time": "11:00",
+  "title": "Hase und Igel & Die Schneekönigin",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-18",
+  "time": "09:30",
+  "title": "Schneewittchen für Kinder & Hase und Igel",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-18",
+  "time": "11:00",
+  "title": "Hase und Igel & Schneewittchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-19",
+  "time": "09:30",
+  "title": "Rotkäppchen & Hase und Igel",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-19",
+  "time": "11:00",
+  "title": "Hase und Igel & Rotkäppchen",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-19",
+  "time": "17:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-19",
+  "time": "17:30",
+  "title": "Hänsel und Gretel & Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-19",
+  "time": "19:00",
+  "title": "Frau Holle & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-19",
+  "time": "19:30",
+  "title": "Fischer un sin Fru & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-19",
+  "time": "21:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-20",
+  "time": "15:30",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-20",
+  "time": "16:00",
+  "title": "Der gestiefelte Kater & Schneewittchen für Kinder",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-20",
+  "time": "17:00",
+  "title": "Frau Holle & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-20",
+  "time": "17:30",
+  "title": "Kaiser Trojan hat Ziegenohren / Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-20",
+  "time": "19:00",
+  "title": "Brüderchen und Schwesterchen & Rotkäppchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-20",
+  "time": "19:30",
+  "title": "Hänsel und Gretel & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-20",
+  "time": "21:00",
+  "title": "Rotkäppchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-21",
+  "time": "15:30",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-21",
+  "time": "16:00",
+  "title": "Der gestiefelte Kater & Schneewittchen für Kinder",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-21",
+  "time": "17:00",
+  "title": "Rotkäppchen & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-21",
+  "time": "17:30",
+  "title": "Die Bremer Stadtmusikanten & Blaubart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-21",
+  "time": "19:00",
+  "title": "Lange Nacht des Märchenerzählens 2026",
+  "audience": "Sonder"
+ },
+ {
+  "date": "2026-11-21",
+  "time": "19:30",
+  "title": "Kaiser Trojan hat Ziegenohren & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-21",
+  "time": "21:00",
+  "title": "Lange Nacht des Märchenerzählens 2026",
+  "audience": "Sonder"
+ },
+ {
+  "date": "2026-11-22",
+  "time": "15:30",
+  "title": "Hase und Igel & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-22",
+  "time": "16:00",
+  "title": "Hase und Igel & Der gestiefelte Kater",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-22",
+  "time": "17:00",
+  "title": "Schneewittchen & Rotkäppchen",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-22",
+  "time": "17:30",
+  "title": "Der gestiefelte Kater & Fischer un sin Fru",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-22",
+  "time": "19:00",
+  "title": "Rumpelstilzchen & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-22",
+  "time": "19:30",
+  "title": "König Drosselbart & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-23",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-23",
+  "time": "19:30",
+  "title": "Shakespeariment - Romeo and Juliet",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-11-24",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-24",
+  "time": "11:00",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-25",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-25",
+  "time": "11:00",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-25",
+  "time": "17:30",
+  "title": "Fischer un sin Fru & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-25",
+  "time": "19:00",
+  "title": "Rotkäppchen & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-25",
+  "time": "19:30",
+  "title": "Kaiser Trojan hat Ziegenohren / Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-26",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-26",
+  "time": "11:00",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-11-26",
+  "time": "15:30",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-26",
+  "time": "17:00",
+  "title": "Ayşenbrödel & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-26",
+  "time": "17:30",
+  "title": "A Christmas Carol",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-11-26",
+  "time": "19:00",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-26",
+  "time": "19:30",
+  "title": "Die Bremer Stadtmusikanten & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-27",
+  "time": "15:30",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-27",
+  "time": "16:00",
+  "title": "Die Bremer Stadtmusikanten & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-27",
+  "time": "17:00",
+  "title": "Der Wolf und die 7 Geißlein & Rotkäppchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-27",
+  "time": "17:30",
+  "title": "Hänsel und Gretel & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-27",
+  "time": "19:00",
+  "title": "Rotkäppchen & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-27",
+  "time": "19:30",
+  "title": "König Drosselbart & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-27",
+  "time": "21:00",
+  "title": "Rumpelstilzchen & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-27",
+  "time": "21:15",
+  "title": "Kaiser Trojan hat Ziegenohren & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-28",
+  "time": "15:30",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-28",
+  "time": "16:00",
+  "title": "Der gestiefelte Kater & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-28",
+  "time": "17:00",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-28",
+  "time": "17:30",
+  "title": "Frau Holle & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-28",
+  "time": "19:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-28",
+  "time": "19:30",
+  "title": "Hänsel und Gretel & Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-28",
+  "time": "21:00",
+  "title": "Schneewittchen für Erwachsene & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-28",
+  "time": "21:15",
+  "title": "Von dem Machandelboom & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-29",
+  "time": "15:30",
+  "title": "Schneewittchen für Kinder & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-29",
+  "time": "16:00",
+  "title": "A Christmas Carol",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-11-29",
+  "time": "17:00",
+  "title": "Hase und Igel & Schneewittchen für Kinder",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-11-29",
+  "time": "17:30",
+  "title": "Hänsel und Gretel & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-11-29",
+  "time": "19:00",
+  "title": "Blaubart & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-01",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-01",
+  "time": "19:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-02",
+  "time": "17:30",
+  "title": "Frau Holle & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-02",
+  "time": "19:30",
+  "title": "König Drosselbart & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-03",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-03",
+  "time": "14:00",
+  "title": "Rotkäppchen & Der gestiefelte Kater",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-03",
+  "time": "16:00",
+  "title": "Kaiser Trojan hat Ziegenohren & Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-03",
+  "time": "17:00",
+  "title": "Schneewittchen für Erwachsene & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-03",
+  "time": "17:30",
+  "title": "Hänsel und Gretel & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-03",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-03",
+  "time": "19:30",
+  "title": "König Drosselbart & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-03",
+  "time": "21:00",
+  "title": "Rumpelstilzchen & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-04",
+  "time": "15:30",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-04",
+  "time": "16:00",
+  "title": "Hänsel und Gretel & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-04",
+  "time": "17:00",
+  "title": "Rumpelstilzchen & Rotkäppchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-04",
+  "time": "17:30",
+  "title": "Von dem Machandelboom & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-04",
+  "time": "19:00",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-04",
+  "time": "19:30",
+  "title": "Der Froschkönig & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-04",
+  "time": "21:00",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-04",
+  "time": "21:15",
+  "title": "A Christmas Carol",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-12-05",
+  "time": "14:00",
+  "title": "Fischer un sin Fru & Schneewittchen für Kinder",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-05",
+  "time": "15:30",
+  "title": "Schneewittchen für Kinder & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-05",
+  "time": "16:00",
+  "title": "Hänsel und Gretel & Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-05",
+  "time": "17:00",
+  "title": "Rotkäppchen & Blaubart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-05",
+  "time": "17:30",
+  "title": "Fischer un sin Fru & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-05",
+  "time": "19:00",
+  "title": "Tapfere Schneiderlein & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-05",
+  "time": "19:30",
+  "title": "Der Froschkönig & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-05",
+  "time": "21:00",
+  "title": "Brüderchen und Schwesterchen & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-05",
+  "time": "21:15",
+  "title": "Kaiser Trojan hat Ziegenohren & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-06",
+  "time": "14:00",
+  "title": "Die Schneekönigin & Frau Holle für Kinder",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-06",
+  "time": "16:00",
+  "title": "A Christmas Carol",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-12-06",
+  "time": "17:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-06",
+  "time": "17:30",
+  "title": "Kaiser Trojan hat Ziegenohren & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-06",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-06",
+  "time": "19:30",
+  "title": "Die Bremer Stadtmusikanten & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-06",
+  "time": "21:00",
+  "title": "Tapfere Schneiderlein & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-06",
+  "time": "21:15",
+  "title": "Kaiser Trojan hat Ziegenohren & Blaubart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-07",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-07",
+  "time": "19:00",
+  "title": "Knack den Fall!",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-12-08",
+  "time": "17:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-08",
+  "time": "17:30",
+  "title": "Der Froschkönig & Der Wolf und die 7 Geißlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-08",
+  "time": "19:30",
+  "title": "Knack den Fall!",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-12-09",
+  "time": "15:30",
+  "title": "Der gestiefelte Kater & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-09",
+  "time": "16:00",
+  "title": "König Drosselbart & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-09",
+  "time": "17:00",
+  "title": "Tapfere Schneiderlein & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-09",
+  "time": "17:30",
+  "title": "Fischer un sin Fru & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-09",
+  "time": "19:00",
+  "title": "Rotkäppchen & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-09",
+  "time": "19:30",
+  "title": "Von dem Machandelboom & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-09",
+  "time": "21:00",
+  "title": "Tapfere Schneiderlein & Rotkäppchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-10",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-10",
+  "time": "11:00",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-10",
+  "time": "16:00",
+  "title": "Schneewittchen für Kinder & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-10",
+  "time": "17:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-10",
+  "time": "17:30",
+  "title": "Der Froschkönig & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-10",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Rotkäppchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-10",
+  "time": "19:30",
+  "title": "Frau Holle & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-10",
+  "time": "21:00",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-10",
+  "time": "21:15",
+  "title": "Hänsel und Gretel & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-11",
+  "time": "14:00",
+  "title": "Fischer un sin Fru & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-11",
+  "time": "15:30",
+  "title": "Hase und Igel & Tapfere Schneiderlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-11",
+  "time": "16:00",
+  "title": "Hänsel und Gretel & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-11",
+  "time": "17:00",
+  "title": "Tapfere Schneiderlein & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-11",
+  "time": "17:30",
+  "title": "Der Froschkönig & Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-11",
+  "time": "19:00",
+  "title": "Ayşenbrödel & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-11",
+  "time": "19:30",
+  "title": "Fischer un sin Fru & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-11",
+  "time": "21:00",
+  "title": "Rumpelstilzchen & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-11",
+  "time": "21:15",
+  "title": "Hänsel und Gretel & Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-12",
+  "time": "14:00",
+  "title": "Die Schneekönigin & Frau Holle für Kinder",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-12",
+  "time": "15:30",
+  "title": "Schneewittchen für Kinder & Tapfere Schneiderlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-12",
+  "time": "16:00",
+  "title": "Frau Holle für Kinder & Die Schneekönigin",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-12",
+  "time": "17:00",
+  "title": "Tapfere Schneiderlein & Schneewittchen für Kinder",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-12",
+  "time": "17:30",
+  "title": "Fischer un sin Fru & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-12",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-12",
+  "time": "19:30",
+  "title": "Frau Holle & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-12",
+  "time": "21:00",
+  "title": "Tapfere Schneiderlein & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-12",
+  "time": "21:15",
+  "title": "Die Bremer Stadtmusikanten & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-12",
+  "time": "22:30",
+  "title": "Schneewittchen für Erwachsene & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-16",
+  "time": "15:30",
+  "title": "Schneewittchen für Kinder & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-16",
+  "time": "17:00",
+  "title": "Brüderchen und Schwesterchen & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-16",
+  "time": "17:30",
+  "title": "Kaiser Trojan hat Ziegenohren & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-16",
+  "time": "19:00",
+  "title": "Frau Holle & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-16",
+  "time": "19:30",
+  "title": "Von dem Machandelboom & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-16",
+  "time": "21:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-17",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-17",
+  "time": "11:00",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-17",
+  "time": "16:00",
+  "title": "Der Wolf und die 7 Geißlein & Fischer un sin Fru",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-17",
+  "time": "17:00",
+  "title": "Rotkäppchen & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-17",
+  "time": "17:30",
+  "title": "Fischer un sin Fru & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-17",
+  "time": "19:00",
+  "title": "Tapfere Schneiderlein & Rotkäppchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-17",
+  "time": "19:30",
+  "title": "König Drosselbart & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-17",
+  "time": "21:00",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-18",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-18",
+  "time": "11:00",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-18",
+  "time": "15:30",
+  "title": "Rotkäppchen & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-18",
+  "time": "16:00",
+  "title": "Die Bremer Stadtmusikanten & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-18",
+  "time": "17:00",
+  "title": "Frau Holle & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-18",
+  "time": "17:30",
+  "title": "Blaubart & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-18",
+  "time": "19:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-18",
+  "time": "19:30",
+  "title": "Die Bremer Stadtmusikanten & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-18",
+  "time": "21:00",
+  "title": "Schneewittchen für Erwachsene & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-18",
+  "time": "22:30",
+  "title": "A Christmas Carol",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-12-19",
+  "time": "15:30",
+  "title": "Rumpelstilzchen & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-19",
+  "time": "16:00",
+  "title": "Fischer un sin Fru & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-19",
+  "time": "17:00",
+  "title": "Frau Holle & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-19",
+  "time": "17:30",
+  "title": "Der Froschkönig & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-19",
+  "time": "19:00",
+  "title": "Rumpelstilzchen & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-19",
+  "time": "19:30",
+  "title": "Kaiser Trojan hat Ziegenohren & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-19",
+  "time": "21:00",
+  "title": "Tapfere Schneiderlein & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-19",
+  "time": "21:15",
+  "title": "König Drosselbart & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "11:00",
+  "title": "Fischer un sin Fru & Frau Holle für Kinder",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "13:30",
+  "title": "Tapfere Schneiderlein & Rotkäppchen",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "14:00",
+  "title": "Frau Holle für Kinder & Fischer un sin Fru",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "15:30",
+  "title": "Der Wolf und die 7 Geißlein & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "16:00",
+  "title": "Der gestiefelte Kater & Hänsel und Gretel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "17:00",
+  "title": "Der Froschkönig & Rotkäppchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "17:30",
+  "title": "Kaiser Trojan hat Ziegenohren & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "19:00",
+  "title": "Frau Holle & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "19:30",
+  "title": "Hänsel und Gretel & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "21:00",
+  "title": "Rumpelstilzchen & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-20",
+  "time": "21:15",
+  "title": "Hänsel und Gretel & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "11:00",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "13:30",
+  "title": "Rotkäppchen & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "14:00",
+  "title": "Fischer un sin Fru & Der gestiefelte Kater",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "15:30",
+  "title": "Hase und Igel & Rotkäppchen",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "16:00",
+  "title": "Der gestiefelte Kater & Hänsel und Gretel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "17:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "17:30",
+  "title": "Blaubart & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "19:30",
+  "title": "König Drosselbart & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "21:00",
+  "title": "Tapfere Schneiderlein & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-21",
+  "time": "21:15",
+  "title": "Die Bremer Stadtmusikanten & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "09:30",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "11:00",
+  "title": "Märchen für Kinder",
+  "audience": "Kinder"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "13:30",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "14:00",
+  "title": "Frau Holle für Kinder & Die Schneekönigin",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "15:30",
+  "title": "Rotkäppchen & Tapfere Schneiderlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "16:00",
+  "title": "Die Schneekönigin & Frau Holle für Kinder",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "17:00",
+  "title": "Tapfere Schneiderlein & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "17:30",
+  "title": "Von dem Machandelboom & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "19:00",
+  "title": "Rumpelstilzchen & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "19:30",
+  "title": "Der Froschkönig & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "21:00",
+  "title": "Ayşenbrödel & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-22",
+  "time": "21:15",
+  "title": "Von dem Machandelboom & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-23",
+  "time": "11:00",
+  "title": "A Christmas Carol",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-12-23",
+  "time": "14:00",
+  "title": "Frau Holle für Kinder & Die Schneekönigin",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-23",
+  "time": "15:30",
+  "title": "Tapfere Schneiderlein & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-23",
+  "time": "16:00",
+  "title": "Der gestiefelte Kater & Fischer un sin Fru",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-23",
+  "time": "17:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-23",
+  "time": "17:30",
+  "title": "Kaiser Trojan hat Ziegenohren / Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-23",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-23",
+  "time": "19:30",
+  "title": "Fischer un sin Fru & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-23",
+  "time": "21:00",
+  "title": "Frau Holle & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-23",
+  "time": "21:15",
+  "title": "Kaiser Trojan hat Ziegenohren & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-25",
+  "time": "14:00",
+  "title": "Hase und Igel & Der gestiefelte Kater",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-25",
+  "time": "15:30",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-25",
+  "time": "16:00",
+  "title": "Der gestiefelte Kater & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-25",
+  "time": "17:00",
+  "title": "Rumpelstilzchen & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-25",
+  "time": "17:30",
+  "title": "Fischer un sin Fru & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-25",
+  "time": "19:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-25",
+  "time": "19:30",
+  "title": "Hänsel und Gretel & Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-25",
+  "time": "21:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-25",
+  "time": "21:15",
+  "title": "Fischer un sin Fru & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-26",
+  "time": "14:00",
+  "title": "Schneewittchen für Kinder & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-26",
+  "time": "15:30",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-26",
+  "time": "16:00",
+  "title": "Fischer un sin Fru & Hänsel und Gretel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-26",
+  "time": "17:00",
+  "title": "Rumpelstilzchen & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-26",
+  "time": "17:30",
+  "title": "Hänsel und Gretel & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-26",
+  "time": "19:00",
+  "title": "Ayşenbrödel & Rotkäppchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-26",
+  "time": "19:30",
+  "title": "Frau Holle & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-26",
+  "time": "21:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-26",
+  "time": "21:15",
+  "title": "A Christmas Carol",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-12-27",
+  "time": "13:30",
+  "title": "Hase und Igel & Tapfere Schneiderlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-27",
+  "time": "14:00",
+  "title": "Frau Holle für Kinder & Die Schneekönigin",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-27",
+  "time": "15:30",
+  "title": "Tapfere Schneiderlein & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-27",
+  "time": "16:00",
+  "title": "Die Schneekönigin & Frau Holle für Kinder",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-27",
+  "time": "17:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-27",
+  "time": "17:30",
+  "title": "A Christmas Carol",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-12-27",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-27",
+  "time": "19:30",
+  "title": "A Christmas Carol",
+  "audience": "Gastspiel"
+ },
+ {
+  "date": "2026-12-28",
+  "time": "16:00",
+  "title": "Schneewittchen für Kinder & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-28",
+  "time": "17:00",
+  "title": "Schneewittchen für Erwachsene & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-28",
+  "time": "17:30",
+  "title": "Von dem Machandelboom & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-28",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-28",
+  "time": "19:30",
+  "title": "Der Froschkönig & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-28",
+  "time": "21:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-29",
+  "time": "16:00",
+  "title": "Fischer un sin Fru & Hänsel und Gretel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-29",
+  "time": "17:00",
+  "title": "Tapfere Schneiderlein & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-29",
+  "time": "17:30",
+  "title": "Der Froschkönig & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-29",
+  "time": "19:00",
+  "title": "Ayşenbrödel & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-29",
+  "time": "19:30",
+  "title": "Die Bremer Stadtmusikanten & Blaubart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-29",
+  "time": "21:00",
+  "title": "Tapfere Schneiderlein & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-30",
+  "time": "16:00",
+  "title": "Frau Holle für Kinder & Die Schneekönigin",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-30",
+  "time": "17:00",
+  "title": "Tapfere Schneiderlein & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-30",
+  "time": "17:30",
+  "title": "König Drosselbart & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-30",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-30",
+  "time": "19:30",
+  "title": "Der Froschkönig & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-30",
+  "time": "21:00",
+  "title": "Frau Holle & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-31",
+  "time": "15:30",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2026-12-31",
+  "time": "17:00",
+  "title": "Rotkäppchen & Der Wolf und die 7 Geißlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-31",
+  "time": "17:30",
+  "title": "Frau Holle & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2026-12-31",
+  "time": "19:00",
+  "title": "Rumpelstilzchen & Rotkäppchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-02",
+  "time": "14:00",
+  "title": "Der gestiefelte Kater & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2027-01-02",
+  "time": "16:00",
+  "title": "Kaiser Trojan hat Ziegenohren & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-02",
+  "time": "17:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-02",
+  "time": "17:30",
+  "title": "König Drosselbart & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-02",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-03",
+  "time": "14:00",
+  "title": "Tapfere Schneiderlein & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2027-01-03",
+  "time": "15:30",
+  "title": "Hase und Igel & Tapfere Schneiderlein",
+  "audience": "Familie"
+ },
+ {
+  "date": "2027-01-03",
+  "time": "16:00",
+  "title": "Fischer un sin Fru & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-03",
+  "time": "17:00",
+  "title": "Tapfere Schneiderlein & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-03",
+  "time": "17:30",
+  "title": "Kaiser Trojan hat Ziegenohren / Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-03",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-03",
+  "time": "19:30",
+  "title": "Kaiser Trojan hat Ziegenohren & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-04",
+  "time": "17:30",
+  "title": "Der Froschkönig & Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-04",
+  "time": "19:00",
+  "title": "Tapfere Schneiderlein & Der Wolf und die 7 Geißlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-04",
+  "time": "19:30",
+  "title": "Hänsel und Gretel & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-05",
+  "time": "17:30",
+  "title": "Frau Holle & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-05",
+  "time": "19:30",
+  "title": "Von dem Machandelboom & Blaubart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-06",
+  "time": "17:00",
+  "title": "Rumpelstilzchen & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-06",
+  "time": "17:30",
+  "title": "Hänsel und Gretel & Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-06",
+  "time": "19:00",
+  "title": "Ayşenbrödel & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-06",
+  "time": "19:30",
+  "title": "Fischer un sin Fru & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-07",
+  "time": "17:30",
+  "title": "Die Bremer Stadtmusikanten & Blaubart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-07",
+  "time": "19:00",
+  "title": "Schneewittchen für Erwachsene & Brüderchen und Schwesterchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-07",
+  "time": "19:30",
+  "title": "Blaubart & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-08",
+  "time": "15:30",
+  "title": "Tapfere Schneiderlein & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-08",
+  "time": "17:00",
+  "title": "Frau Holle & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-08",
+  "time": "17:30",
+  "title": "König Drosselbart & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-08",
+  "time": "19:00",
+  "title": "Tapfere Schneiderlein & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-08",
+  "time": "19:30",
+  "title": "Kaiser Trojan hat Ziegenohren & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-09",
+  "time": "14:00",
+  "title": "Der gestiefelte Kater & Fischer un sin Fru",
+  "audience": "Familie"
+ },
+ {
+  "date": "2027-01-09",
+  "time": "15:30",
+  "title": "Schneewittchen für Kinder & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2027-01-09",
+  "time": "16:00",
+  "title": "Fischer un sin Fru & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-09",
+  "time": "17:00",
+  "title": "Rumpelstilzchen & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-09",
+  "time": "17:30",
+  "title": "Hänsel und Gretel & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-09",
+  "time": "19:00",
+  "title": "Tapfere Schneiderlein & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-09",
+  "time": "19:30",
+  "title": "Von dem Machandelboom & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-10",
+  "time": "14:00",
+  "title": "Hase und Igel & Der gestiefelte Kater",
+  "audience": "Familie"
+ },
+ {
+  "date": "2027-01-10",
+  "time": "16:00",
+  "title": "Fischer un sin Fru & Hänsel und Gretel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2027-01-10",
+  "time": "17:00",
+  "title": "Der Wolf und die 7 Geißlein & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-10",
+  "time": "17:30",
+  "title": "Hänsel und Gretel & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-10",
+  "time": "19:30",
+  "title": "Der Froschkönig & Hänsel und Gretel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-12",
+  "time": "17:30",
+  "title": "Fischer un sin Fru & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-12",
+  "time": "19:00",
+  "title": "Ayşenbrödel & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-12",
+  "time": "19:30",
+  "title": "König Drosselbart & Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-13",
+  "time": "17:30",
+  "title": "Blaubart & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-13",
+  "time": "19:30",
+  "title": "Die Bremer Stadtmusikanten & Frau Holle",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-14",
+  "time": "17:30",
+  "title": "Kaiser Trojan hat Ziegenohren / Fischer un sin Fru",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-14",
+  "time": "19:00",
+  "title": "Brüderchen und Schwesterchen & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-14",
+  "time": "19:30",
+  "title": "Fischer un sin Fru & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-15",
+  "time": "16:00",
+  "title": "Frau Holle für Kinder & Die Schneekönigin",
+  "audience": "Familie"
+ },
+ {
+  "date": "2027-01-15",
+  "time": "17:00",
+  "title": "Der Wolf und die 7 Geißlein & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-15",
+  "time": "17:30",
+  "title": "Hänsel und Gretel & Kaiser Trojan hat Ziegenohren",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-15",
+  "time": "19:00",
+  "title": "Tapfere Schneiderlein & Schneewittchen für Erwachsene",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-15",
+  "time": "19:30",
+  "title": "Kaiser Trojan hat Ziegenohren & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-16",
+  "time": "14:00",
+  "title": "Fischer un sin Fru & Hase und Igel",
+  "audience": "Familie"
+ },
+ {
+  "date": "2027-01-16",
+  "time": "16:00",
+  "title": "Der Froschkönig & König Drosselbart",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-16",
+  "time": "17:00",
+  "title": "Tapfere Schneiderlein & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-16",
+  "time": "17:30",
+  "title": "König Drosselbart & Der Froschkönig",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-16",
+  "time": "19:00",
+  "title": "Rumpelstilzchen & Tapfere Schneiderlein",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-16",
+  "time": "19:30",
+  "title": "König Drosselbart & Von dem Machandelboom",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-17",
+  "time": "17:00",
+  "title": "Ayşenbrödel & Rumpelstilzchen",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-17",
+  "time": "17:30",
+  "title": "Kaiser Trojan hat Ziegenohren & Die Bremer Stadtmusikanten",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-17",
+  "time": "19:00",
+  "title": "Rumpelstilzchen & Ayşenbrödel",
+  "audience": "Erwachsene"
+ },
+ {
+  "date": "2027-01-17",
+  "time": "19:30",
+  "title": "Die Bremer Stadtmusikanten & Blaubart",
+  "audience": "Erwachsene"
+ }
+]

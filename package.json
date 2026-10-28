@@ -1,0 +1,10 @@
+{
+  "name": "huettenplan",
+  "version": "1.0.0",
+  "description": "Schichtplanung Märchenhütten Monbijoupark",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=22.5" },
+  "license": "UNLICENSED",
+  "private": true
+}
