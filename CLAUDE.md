@@ -84,7 +84,8 @@ Quelle der Wahrheit ist der Code; Standardwerte stehen im Seed-Block (`server.js
 | Einteilen, Gewerk-Beschränkung für Mitarbeitende, Freigeben → Übernehmen | OK |
 | Kommzeit mit/ohne Übergabe, Stundenberechnung | OK (ohne Übergabe 16:00 / 6,5 h) |
 | Admin-Endpunkte als Mitarbeiter | 403, Server läuft weiter (Absturz behoben, siehe unten); Admin-Zugriff unverändert OK |
-| Spielplan-Import von maerchenhuetten.com | nicht geprüft (kein Netz-Test), Frontend im Browser ebenfalls nicht geprüft |
+| Login im Browser (Chromium, Desktop- und Handy-Größe) | OK nach Fix: PIN-Eingabe, Enter, Klick, falsche PIN → Meldung. Früher schluckte `onkeydown = e => e.key === 'Enter' && go()` jede Taste (Rückgabe `false` bricht die Eingabe ab) – in Handlern immer `{ if (…) … }` statt `&&`-Ausdruck |
+| Spielplan-Import von maerchenhuetten.com | nicht geprüft (kein Netz-Test); übrige Oberfläche nach dem Login nur per Screenshot des Plans gesehen |
 
 ### Behoben: Absturz bei Admin-Routen als Nicht-Admin
 

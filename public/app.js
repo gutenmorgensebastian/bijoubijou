@@ -42,7 +42,7 @@ const budgetOf = (pid, date) => S.budget[`${pid}:${date.slice(0, 7)}`] || { leve
 function renderLogin() {
   app.innerHTML = `<div class="login card"><h2>Hüttenplan</h2><p class="mute">Märchenhütten im Monbijoupark – Schichtplan</p><input id="pin" inputmode="numeric" placeholder="PIN" autofocus><br><br><button class="primary" id="go">Anmelden</button><p class="mute" style="margin-top:20px">Deine PIN bekommst du von der Produktionsleitung.</p></div>`;
   const go = async () => { try { await api('/login', { method: 'POST', body: { pin: $('#pin').value } }); boot(); } catch (e) { toast(e.message, true); } };
-  $('#go').onclick = go; $('#pin').onkeydown = e => e.key === 'Enter' && go();
+  $('#go').onclick = go; $('#pin').onkeydown = e => { if (e.key === 'Enter') go(); };
 }
 
 // ---------- Layout ----------
