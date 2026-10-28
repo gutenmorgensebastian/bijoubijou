@@ -42,7 +42,9 @@ elif git fetch -q origin main 2>/dev/null; then
   if [ "$(git branch --show-current)" != "main" ]; then git checkout -q main 2>/dev/null; fi
   if git merge -q --ff-only origin/main 2>/dev/null; then echo "Version: $(git log --oneline -1)"; else echo "Hinweis: Update übersprungen (lokale Änderungen?)."; fi
 else
-  echo "Hinweis: kein Internet, starte mit vorhandener Version."
+  echo "Hinweis: Update nicht abrufbar (kein Internet oder keine GitHub-Anmeldung im Terminal)."
+  echo "         Mit GitHub Desktop: dort „Fetch origin“ und dann „Pull origin“ klicken, danach neu starten."
+  echo "         Gestartet wird jetzt die vorhandene Version: $(git log --oneline -1)"
 fi
 
 PORT=${PORT:-3080}
