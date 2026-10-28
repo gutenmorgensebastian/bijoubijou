@@ -68,10 +68,16 @@ function shiftCard(s) {
   const chips = s.gewerke.filter(g => g.demand || g.assignments.length).map(g => {
     const names = g.assignments.filter(a => a.status !== 'frei').map(a => { const b = budgetOf(a.person_id, s.date); const n = esc(a.person_name.split(' ')[0]); return b.level === 'ok' ? n : `<u class="bud-${b.level}" title="${b.hours} h im Monat – ${b.level === 'bad' ? 'Budget/Minijob-Grenze überschritten' : 'über 85 % des Budgets'}">${n}${b.level === 'bad' ? ' ⚠' : ''}</u>`; });
     const label = `${g.gewerk.short} ${g.filled}/${g.demand}${names.length ? ' ' + names.join(', ') : ''}`;
-    return `<span class="chip ${g.missing ? 'miss' : ''}" style="background:${g.gewerk.color}">${label}</span>${g.open ? `<span class="chip frei">${g.gewerk.short} frei</span>` : ''}`;
+    const rm = isAdmin() && g.demand ? `<button class="pl-rm" data-slot-rm="${g.gewerk.id}" title="Einen ${esc(g.gewerk.name)}-Platz entfernen">×</button>` : '';
+    return `<span class="chip ${g.missing ? 'miss' : ''}" style="background:${g.gewerk.color}">${label}${rm}</span>${g.open ? `<span class="chip frei">${g.gewerk.short} frei</span>` : ''}`;
   }).join('');
+  const addSlot = isAdmin() ? `<select class="pl-add" data-slot-add="${s.id}" title="Arbeitsplatz hinzufügen"><option value="">+ Arbeitsplatz</option>${s.gewerke.map(g => `<option value="${g.gewerk.id}">${esc(g.gewerk.name)} (${g.demand} → ${g.demand + 1})</option>`).join('')}</select>` : '';
+  const delShift = isAdmin() ? `<button class="pl-del" data-shift-del="${s.id}" title="Schicht löschen">✕</button>` : '';
   const perf = s.performances.length ? `${s.performances.length} Vorst. · ${s.performances[0].time}–${s.performances[s.performances.length - 1].time}` : 'ohne Vorstellung';
-  return `<div class="shift ${s.status} ${mine ? 'mine' : ''}" data-s="${s.id}"><div class="t">${kindName(s.kind)} ${s.start}–${s.end}${s.peak ? ' · ★' : ''}${s.note ? ' · ' + esc(s.note) : ''}</div><div class="perf">${esc(perf)}</div><div class="chips">${chips}</div></div>`;
+  return `<div class="shift ${s.status} ${mine ? 'mine' : ''}" data-s="${s.id}"><div class="t">${kindName(s.kind)} ${s.start}–${s.end}${s.peak ? ' · ★' : ''}${s.note ? ' · ' + esc(s.note) : ''}</div><div class="perf">${esc(perf)}</div><div class="chips">${chips}</div>${addSlot}${delShift}</div>`;
+}
+function emptyShift(date, kind, cls = '') {
+  return isAdmin() ? `<div class="empty ${cls}"><button class="small pl-new" data-new-shift="${date}" data-kind="${kind}">+ ${kindName(kind)}</button></div>` : `<div class="empty ${cls}">–</div>`;
 }
 function viewPlan(m) {
   const days = monthDays(S.month);
@@ -90,11 +96,17 @@ function viewPlan(m) {
       const av = (avail[d] || []).filter(a => a.status === 'no').map(a => person(a.person_id)?.name.split(' ')[0]).filter(Boolean);
       if (!ss.length && (d < S.season.start || d > S.season.end)) return '';
       return `<div class="day ${d === today() ? 'today' : ''}"><div class="dh">${fmtD(d)}${hol ? '<span class="hol"> Feiertag</span>' : ''}<small>${ss.length ? '' : 'spielfrei'}${av.length ? `<span title="nicht verfügbar">⛔ ${esc(av.join(', '))}</span>` : ''}</small></div>
-        ${tag ? shiftCard(tag) : '<div class="empty hide-m">–</div>'}${ab ? shiftCard(ab) : '<div class="empty">–</div>'}</div>`;
+        ${tag ? shiftCard(tag) : emptyShift(d, 'tag', isAdmin() ? '' : 'hide-m')}${ab ? shiftCard(ab) : emptyShift(d, 'abend')}</div>`;
     }).join('')}</div>`;
   $('#pm').onclick = () => { S.month = pm; renderView(); }; $('#nm').onclick = () => { S.month = nm; renderView(); };
   m.querySelectorAll('.shift').forEach(el => el.onclick = () => openShift(Number(el.dataset.s)));
   if (isAdmin()) {
+    const act = async (fn) => { try { await fn(); } catch (e) { toast(e.message, true); } };
+    const stop = (el, fn) => { el.onclick = (e) => { e.stopPropagation(); fn(e); }; };
+    m.querySelectorAll('[data-new-shift]').forEach(b => b.onclick = () => act(async () => { const kind = b.dataset.kind; const s = await api('/shifts', { method: 'POST', body: { date: b.dataset.newShift, kind, start: kind === 'tag' ? '09:30' : '17:00', end: kind === 'tag' ? '13:00' : '23:00' } }); openShift(s.id); }));
+    m.querySelectorAll('[data-shift-del]').forEach(b => stop(b, () => { const s = S.shifts.find(x => x.id === Number(b.dataset.shiftDel)); if (s && confirm(`${fmtD(s.date)} ${kindName(s.kind)} samt Einteilung löschen?`)) act(() => api('/shifts/' + s.id, { method: 'DELETE' })); }));
+    m.querySelectorAll('[data-slot-rm]').forEach(b => stop(b, () => { const sid = Number(b.closest('.shift').dataset.s); const g = S.shifts.find(x => x.id === sid)?.gewerke.find(x => x.gewerk.id === Number(b.dataset.slotRm)); if (!g) return; if (!g.missing && g.assignments.length && !confirm(`Alle ${g.gewerk.name}-Plätze sind belegt – Platz inkl. Einteilung (${g.assignments[g.assignments.length - 1].person_name || 'frei'}) entfernen?`)) return; act(() => api(`/shifts/${sid}/slots`, { method: 'POST', body: { gewerk_id: g.gewerk.id, delta: -1 } })); }));
+    m.querySelectorAll('[data-slot-add]').forEach(sel => { sel.onclick = (e) => e.stopPropagation(); sel.onchange = () => { const gid = Number(sel.value); sel.value = ''; if (gid) act(() => api(`/shifts/${sel.dataset.slotAdd}/slots`, { method: 'POST', body: { gewerk_id: gid, delta: 1 } })); }; });
     $('#regen').onclick = async () => { const r = await api('/shifts/regenerate', { method: 'POST' }); toast(`${r.created} neue Schichten`); };
     $('#addShift').onclick = async () => { const date = prompt('Datum (JJJJ-MM-TT)', S.month + '-01'); if (!date) return; const kind = confirm('Abendschicht? (Abbrechen = Tagschicht)') ? 'abend' : 'tag'; const start = prompt('Beginn (HH:MM)', kind === 'tag' ? '09:30' : '17:00'); const end = prompt('Ende (HH:MM)', kind === 'tag' ? '13:00' : '23:00'); try { await api('/shifts', { method: 'POST', body: { date, kind, start, end } }); } catch (e) { toast(e.message, true); } };
   }

@@ -35,6 +35,14 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 .empty{color:var(--mute);font-size:12px;padding:10px;text-align:center}
 .avail-no{background:var(--badbg)}
 @media(max-width:720px){.day{grid-template-columns:70px 1fr}.day .shift:nth-child(3){grid-column:2}.hide-m{display:none}}
+/* Plan: Schichten und Arbeitsplätze bearbeiten (pl-) */
+.shift{position:relative}
+.pl-del{position:absolute;top:2px;right:2px;padding:0 6px;line-height:18px;font-size:12px;border-radius:6px;color:var(--bad)}
+.pl-rm{background:none;border:none;color:inherit;padding:0 0 0 4px;font-size:13px;line-height:1;cursor:pointer;opacity:.8}
+.chip.miss .pl-rm{color:var(--bad)}
+.pl-add{width:auto;max-width:100%;margin-top:4px;font-size:12px;padding:1px 4px}
+.pl-new{width:100%}
+@media print{.pl-del,.pl-rm,.pl-add,.pl-new{display:none!important}}
 /* Spielplan */
 .sp-week{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;overflow-x:auto;align-items:start}
 .sp-day{border:1px solid var(--line);border-radius:10px;padding:6px;min-width:0}.sp-day.today{background:var(--warnbg)}

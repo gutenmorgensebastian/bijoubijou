@@ -285,7 +285,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       // --- Plan ---
-      if (p === '/api/shifts') {
+      if (p === '/api/shifts' && req.method === 'GET') {
         const from = url.searchParams.get('from') || setting('season').start, to = url.searchParams.get('to') || setting('season').end;
         const shifts = all('SELECT * FROM shifts WHERE date>=? AND date<=? ORDER BY date,kind DESC', from, to).map(shiftView);
         const avail = all('SELECT * FROM availability WHERE date>=? AND date<=?', from, to);
@@ -309,10 +309,30 @@ const server = http.createServer(async (req, res) => {
         }
         if (req.method === 'DELETE' && need(admin)) { run('DELETE FROM assignments WHERE shift_id=?', s.id); run('DELETE FROM demand WHERE shift_id=?', s.id); run('DELETE FROM shifts WHERE id=?', s.id); log(me.id, 'shift.delete', `${s.date} ${s.kind}`); broadcast({ type: 'shifts' }); return json(res, 200, { ok: true }); }
       }
+      // Arbeitsplatz (Platz eines Gewerks) in einer Schicht hinzufügen (delta +1) oder entfernen (delta -1)
+      const mslot = p.match(/^\/api\/shifts\/(\d+)\/slots$/);
+      if (mslot && req.method === 'POST' && need(admin)) {
+        const s = get('SELECT * FROM shifts WHERE id=?', mslot[1]), g = get('SELECT * FROM gewerke WHERE id=?', body.gewerk_id);
+        if (!s || !g) return json(res, 400, { error: 'Schicht/Arbeitsplatz fehlt' });
+        const cur = get('SELECT count FROM demand WHERE shift_id=? AND gewerk_id=?', s.id, g.id)?.count ?? 0;
+        if (body.delta < 0) {
+          if (cur <= 0) return json(res, 400, { error: `Kein ${g.name}-Platz in dieser Schicht` });
+          const sv = shiftView(s).gewerke.find(x => x.gewerk.id === g.id);
+          if (!sv.missing) { // kein unbesetzter Platz: freigegebenen, sonst letzten eingeteilten Eintrag mit entfernen
+            const a = sv.assignments.filter(x => x.status === 'frei').pop() || sv.assignments[sv.assignments.length - 1];
+            if (a) run('DELETE FROM assignments WHERE id=?', a.id);
+          }
+        }
+        run('INSERT INTO demand(shift_id,gewerk_id,count) VALUES(?,?,?) ON CONFLICT DO UPDATE SET count=excluded.count', s.id, g.id, body.delta < 0 ? cur - 1 : cur + 1);
+        log(me.id, body.delta < 0 ? 'shift.slot.remove' : 'shift.slot.add', `${g.name} ${s.date} (${s.kind})`); broadcast({ type: 'shifts' });
+        return json(res, 200, shiftView(s));
+      }
       if (p === '/api/shifts' && req.method === 'POST' && need(admin)) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(body.date || '')) return json(res, 400, { error: 'Datum fehlt (JJJJ-MM-TT)' });
+        if (get('SELECT 1 FROM shifts WHERE date=? AND kind=?', body.date, body.kind || 'abend')) return json(res, 400, { error: 'Diese Schicht gibt es an dem Tag schon' });
         const r = run('INSERT INTO shifts(date,kind,start,end,manual,note) VALUES(?,?,?,?,1,?)', body.date, body.kind || 'abend', body.start || '17:00', body.end || '23:00', body.note || '');
         const sid = Number(r.lastInsertRowid);
-        for (const g of all('SELECT * FROM gewerke WHERE active=1')) run('INSERT INTO demand VALUES(?,?,?)', sid, g.id, body.kind === 'tag' ? g.demand_day : g.demand_eve);
+        for (const g of all('SELECT * FROM gewerke WHERE active=1')) run('INSERT INTO demand VALUES(?,?,?)', sid, g.id, body.kind === 'tag' ? g.demand_day : (isPeak(body.date) ? g.demand_eve_peak : g.demand_eve));
         log(me.id, 'shift.create', `${body.date} ${body.kind}`); broadcast({ type: 'shifts' }); return json(res, 200, shiftView(get('SELECT * FROM shifts WHERE id=?', sid)));
       }
       if (p === '/api/shifts/regenerate' && req.method === 'POST' && need(admin)) { const n = regenerateShifts(me.id); broadcast({ type: 'shifts' }); return json(res, 200, { created: n }); }
