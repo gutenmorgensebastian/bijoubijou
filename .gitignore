@@ -5,3 +5,4 @@ data/*.sqlite-*
 data/*.log
 .versuch/
 .versuch-data/
+.server-adresse

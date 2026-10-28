@@ -13,6 +13,10 @@ Erster Login: **PIN 1234** (Admin „Sebastian (Produktion)“). PIN danach unte
 
 Beim ersten Start werden angelegt: die vier Gewerke (Kasse 15 €, Einlass 15 €, Bühnenassistenz 16 €, Abenddienstleitung 18 €) mit Vorlaufzeiten, Checklisten, der Spielplan 13.11.2026–17.01.2027 (Stand 28.10.2026, aus `data/spielplan-seed.json`) und daraus 72 Schichten. Alle Daten liegen in `data/huettenplan.sqlite` – diese Datei regelmäßig sichern (Backup-Link in den Einstellungen).
 
+## Mehrere Macs, dieselben Daten
+
+Die Daten liegen nur auf **einem** Rechner (Haupt-Mac). Dort `Huettenplan starten.command` doppelklicken; das Fenster zeigt die Adresse fürs WLAN (z. B. `http://Name.local:3080`). Auf dem zweiten Mac `Huettenplan im Netzwerk oeffnen.command` doppelklicken und beim ersten Mal diese Adresse eingeben. Beide Macs müssen im selben WLAN sein, und auf dem Haupt-Mac muss das Fenster offen bleiben. Handys im WLAN können dieselbe Adresse im Browser öffnen.
+
 ## Dauerbetrieb auf dem Mac Mini
 
 ```bash

@@ -32,6 +32,16 @@ fi
 
 PORT=${PORT:-3080}
 echo "Hüttenplan startet auf http://localhost:$PORT  (Admin-PIN: 1234)"
+# Adressen für andere Geräte im selben WLAN (anderer Mac, Handys)
+HOST=$(scutil --get LocalHostName 2>/dev/null)
+IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)
+echo
+echo "Von anderen Geräten im selben WLAN erreichbar unter:"
+[ -n "$HOST" ] && echo "   http://$HOST.local:$PORT"
+[ -n "$IP" ] && echo "   http://$IP:$PORT"
+echo "(Fragt macOS nach eingehenden Verbindungen für „node“: bitte „Erlauben“ klicken.)"
+echo
 echo "Zum Beenden dieses Fenster schließen oder Ctrl+C drücken."
+echo "Solange dieses Fenster offen ist, geht der Mac nicht in den Ruhezustand."
 ( sleep 2; open "http://localhost:$PORT" ) &
-PORT=$PORT node server.js
+PORT=$PORT caffeinate -i node server.js
