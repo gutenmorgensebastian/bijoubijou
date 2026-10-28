@@ -77,6 +77,14 @@ if (!get('SELECT 1 FROM settings WHERE key=?', 'seeded')) {
   setSetting('needs_generate', true);
 }
 
+// Reparatur: Personen ohne PIN (früherer Fehler beim Speichern unter „Mein Plan“) bekommen wieder eine
+for (const p of all("SELECT id,name,role FROM people WHERE pin IS NULL OR TRIM(pin)=''")) {
+  let pin = p.role === 'admin' ? '1234' : '';
+  while (!pin || get('SELECT 1 FROM people WHERE pin=?', pin)) pin = String(Math.floor(1000 + Math.random() * 9000));
+  run('UPDATE people SET pin=? WHERE id=?', pin, p.id);
+  console.log(`PIN-Reparatur: ${p.name} hat jetzt die PIN ${pin}`);
+}
+
 // ---------- Zeitlogik ----------
 const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 const toT = (m) => { m = ((m % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
@@ -367,6 +375,12 @@ const server = http.createServer(async (req, res) => {
         const id = Number(mp[1]); const pr = get('SELECT * FROM people WHERE id=?', id); if (!pr) return json(res, 404, {});
         if (req.method === 'GET') { if (!admin && id !== me.id) return json(res, 403, {}); return json(res, 200, { ...pr, gewerke: JSON.parse(pr.gewerke || '[]'), pin: admin || id === me.id ? pr.pin : undefined, token: id === me.id || admin ? pr.token : undefined }); }
         if (req.method === 'PUT') {
+          const np = String(body.pin ?? '').trim();
+          if (np) {
+            if (!/^\d{4}$/.test(np)) return json(res, 400, { error: 'PIN muss aus 4 Ziffern bestehen' });
+            if (get('SELECT 1 FROM people WHERE pin=? AND id<>?', np, id)) return json(res, 400, { error: 'PIN schon vergeben' });
+          }
+          body.pin = np || undefined;
           if (admin) run('UPDATE people SET name=?,phone=?,email=?,role=?,employment=?,budget_month=?,budget_week=?,gewerke=?,notes=?,active=?,pin=? WHERE id=?', body.name ?? pr.name, body.phone ?? pr.phone, body.email ?? pr.email, body.role ?? pr.role, body.employment ?? pr.employment, body.budget_month ?? pr.budget_month, body.budget_week ?? pr.budget_week, JSON.stringify(body.gewerke ?? JSON.parse(pr.gewerke || '[]')), body.notes ?? pr.notes, body.active ?? pr.active, body.pin ?? pr.pin, id);
           else if (id === me.id) run('UPDATE people SET phone=?,email=?,pin=? WHERE id=?', body.phone ?? pr.phone, body.email ?? pr.email, body.pin ?? pr.pin, id);
           else return json(res, 403, {});

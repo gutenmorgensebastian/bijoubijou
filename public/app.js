@@ -42,7 +42,7 @@ const budgetOf = (pid, date) => S.budget[`${pid}:${date.slice(0, 7)}`] || { leve
 function renderLogin() {
   app.innerHTML = `<div class="login card"><h2>Hüttenplan</h2><p class="mute">Märchenhütten im Monbijoupark – Schichtplan</p><input id="pin" inputmode="numeric" placeholder="PIN" autofocus><br><br><button class="primary" id="go">Anmelden</button><p class="mute" style="margin-top:20px">Deine PIN bekommst du von der Produktionsleitung.</p></div>`;
   const go = async () => { try { await api('/login', { method: 'POST', body: { pin: $('#pin').value } }); boot(); } catch (e) { toast(e.message, true); } };
-  $('#go').onclick = go; $('#pin').onkeydown = e => e.key === 'Enter' && go();
+  $('#pin').focus(); $('#go').onclick = go; $('#pin').onkeydown = e => e.key === 'Enter' && go();
 }
 
 // ---------- Layout ----------
@@ -177,10 +177,10 @@ async function viewMine(m) {
     <h3>Kalender-Abo</h3><p class="mute">Diesen Link in Apple/Google-Kalender als Abo einfügen, dann stehen deine Schichten mit Kommzeit automatisch im Handy:</p><input readonly value="${icsUrl}" onclick="this.select()"></div>
     <div class="card"><h3>Meine Verfügbarkeit</h3><p class="mute">Tage antippen: 1× = <b>kann nicht</b>, 2× = <b>unsicher</b>, 3× = wieder frei. Die Produktion sieht das bei der Planung.</p>
     ${months.map(ym => { const days = monthDays(ym); const first = new Date(ym + '-01T12:00:00').getDay(); return `<h3>${MON[Number(ym.slice(5)) - 1]}</h3><div class="cal">${WD.slice(1).concat(WD[0]).map(w => `<div class="off" style="border:none">${w}</div>`).join('')}${Array.from({ length: (first + 6) % 7 }, () => '<div class="off" style="border:none"></div>').join('')}${days.map(d => { const a = av[d]; const has = S.shifts.some(s => s.date === d); const mineDay = mine.some(x => x.s.date === d); return `<div data-av="${d}" class="${a?.status || ''} ${has ? '' : 'off'} ${mineDay ? 'has' : ''}" title="${esc(a?.note || '')}">${Number(d.slice(8))}</div>`; }).join('')}</div>`; }).join('')}</div>
-    <div class="card"><h3>Meine Kontaktdaten</h3><label>Telefon</label><input id="mPhone" value="${esc(me.phone || '')}"><label>E-Mail</label><input id="mEmail" value="${esc(me.email || '')}"><label>PIN (4 Ziffern)</label><input id="mPin" value="${esc(me.pin)}"><button class="primary" id="mSave" style="margin-top:8px">Speichern</button></div>`;
+    <div class="card"><h3>Meine Kontaktdaten</h3><label>Telefon</label><input id="mPhone" value="${esc(me.phone || '')}"><label>E-Mail</label><input id="mEmail" value="${esc(me.email || '')}"><label>Neue PIN (4 Ziffern, leer = unverändert)</label><input id="mPin" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off"><button class="primary" id="mSave" style="margin-top:8px">Speichern</button></div>`;
   m.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openShift(Number(b.dataset.open)));
   m.querySelectorAll('[data-av]').forEach(el => el.onclick = async () => { if (el.classList.contains('off')) return; const d = el.dataset.av; const cur = av[d]?.status; const next = !cur ? 'no' : cur === 'no' ? 'maybe' : ''; let note = ''; if (next === 'no') note = prompt('Grund (optional)', '') ?? ''; await api('/availability', { method: 'POST', body: { date: d, status: next, note } }); renderView(); });
-  $('#mSave').onclick = async () => { try { await api('/people/' + S.me.id, { method: 'PUT', body: { phone: $('#mPhone').value, email: $('#mEmail').value, pin: $('#mPin').value } }); toast('gespeichert'); } catch (e) { toast(e.message, true); } };
+  $('#mSave').onclick = async () => { try { await api('/people/' + S.me.id, { method: 'PUT', body: { phone: $('#mPhone').value, email: $('#mEmail').value, pin: $('#mPin').value.trim() } }); $('#mPin').value = ''; toast('gespeichert'); } catch (e) { toast(e.message, true); } };
 }
 function hoursBar(h, p) {
   const budget = p.budget_month || 40; const pct = Math.min(100, Math.round(h.hours / budget * 100));
