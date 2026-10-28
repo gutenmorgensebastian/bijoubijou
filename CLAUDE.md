@@ -80,13 +80,17 @@ Quelle der Wahrheit ist der Code; Standardwerte stehen im Seed-Block (`server.js
 | Login, `/api/me`, `bootstrap`, `shifts`, `hours`, `hours.csv`, `performances`, `log`, `todos`, `reports`, `channels`, `/ics`, statische Auslieferung | alle 200; ohne Login 401 |
 | Einteilen, Gewerk-Beschränkung für Mitarbeitende, Freigeben → Übernehmen | OK |
 | Kommzeit mit/ohne Übergabe, Stundenberechnung | OK (ohne Übergabe 16:00 / 6,5 h) |
-| Admin-Endpunkte als Mitarbeiter (403) | 403 wird gesendet, **aber Server stürzt ab** (siehe unten) |
+| Admin-Endpunkte als Mitarbeiter | 403, Server läuft weiter (Absturz behoben, siehe unten); Admin-Zugriff unverändert OK |
 | Spielplan-Import von maerchenhuetten.com | nicht geprüft (kein Netz-Test), Frontend im Browser ebenfalls nicht geprüft |
 
-### Bekannter Fehler: Absturz bei Admin-Routen als Nicht-Admin
+### Behoben: Absturz bei Admin-Routen als Nicht-Admin
 
-`need(admin)` schickt bei fehlendem Recht selbst die 403-Antwort und liefert `false`. Wird es – wie bei den 14 Stellen der Form `… && need(admin)` – in der `if`-Bedingung benutzt, läuft der Code danach weiter bis `return json(res, 404, …)` (`server.js:431`); das wirft `ERR_HTTP_HEADERS_SENT`, der `catch` (`server.js:442`) wirft erneut, und der **Node-Prozess beendet sich**. Reproduzierbar: als Mitarbeiter `GET /api/hours.csv` oder `GET /api/backup` aufrufen. Jede angemeldete Person kann den Server damit zum Absturz bringen; unter launchd (`KeepAlive`) startet er neu, laufende SSE-Verbindungen brechen ab. Noch nicht behoben. Naheliegende Korrektur: `need` die Antwort nicht selbst senden lassen, sondern in den Routen `if (!admin) return json(res, 403, …)` nutzen bzw. `need(...)` mit `return` aufrufen.
+`need(admin)` hat früher selbst die 403-Antwort gesendet und `false` geliefert; der Code lief in den `&& need(admin)`-Bedingungen weiter bis zur 404-Antwort, das warf `ERR_HTTP_HEADERS_SENT` und beendete den Prozess. Jetzt **wirft `need` einen Fehler mit `status: 403`**, den der `catch` am Ende des Handlers in eine 403-Antwort umsetzt (und bei bereits gesendeten Headern nur noch die Antwort beendet). Neue Admin-Routen deshalb einfach `need(admin)` aufrufen – kein `return` und keine eigene 403-Antwort nötig. Geprüft: 15 Admin-Routen als Mitarbeiter → 403, Server bleibt oben.
+
+### Bekannter Fehler: Schicht anlegen nicht erreichbar
+
+`GET`-Zweig `if (p === '/api/shifts')` prüft die Methode nicht und antwortet auch auf `POST` mit der Schichtliste. Der Zweig zum manuellen Anlegen einer Schicht (`POST /api/shifts`) darunter wird dadurch nie erreicht. Noch nicht behoben (Korrektur: `&& req.method === 'GET'` ergänzen).
 
 ### Empfehlung für Tests
 
-Ohne neue Abhängigkeiten reicht `node --test` (eingebaut): `server.js` mit `DATA_DIR` auf ein Temp-Verzeichnis und freiem `PORT` starten und per `fetch` gegen die API prüfen. Zuerst abdecken: Kommzeit/Übergabe (`arrival`), Stundenberechnung über Mitternacht, Minijob-/Budget-Warnungen, Tausch (`direct`/`approve`), Rechte für `staff` vs. `admin` (Regression für den Absturz oben), `regenerateShifts` mit `manual=1`.
+Ohne neue Abhängigkeiten reicht `node --test` (eingebaut): `server.js` mit `DATA_DIR` auf ein Temp-Verzeichnis und freiem `PORT` starten und per `fetch` gegen die API prüfen. Zuerst abdecken: Kommzeit/Übergabe (`arrival`), Stundenberechnung über Mitternacht, Minijob-/Budget-Warnungen, Tausch (`direct`/`approve`), Rechte für `staff` vs. `admin` (Regression für den behobenen Absturz), `regenerateShifts` mit `manual=1`.

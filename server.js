@@ -232,7 +232,7 @@ const server = http.createServer(async (req, res) => {
   const me = auth(req);
   const admin = me && me.role === 'admin';
   const body = ['POST', 'PUT', 'DELETE'].includes(req.method) ? await readBody(req) : {};
-  const need = (cond, msg = 'Nicht erlaubt') => { if (!cond) { json(res, 403, { error: msg }); return false; } return true; };
+  const need = (cond, msg = 'Nicht erlaubt') => { if (!cond) throw Object.assign(new Error(msg), { status: 403 }); return true; };
 
   try {
     // --- Login ---
@@ -439,7 +439,9 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': MIME[path.extname(f)] || 'application/octet-stream', 'cache-control': 'no-cache' });
     fs.createReadStream(f).pipe(res);
   } catch (e) {
-    console.error(e); json(res, 500, { error: String(e.message || e) });
+    if (!e.status) console.error(e);
+    if (res.headersSent) return res.end();
+    json(res, e.status || 500, { error: String(e.message || e) });
   }
 });
 
