@@ -4,6 +4,29 @@ Kleine Web-App für Kontakte, Schichtplan, Schichttausch, Chat, Checklisten, Stu
 
 ## Start
 
+### Empfohlen auf dem Mac: Ordner in „Dokumente“, Doppelklick zum (Neu-)Starten
+
+Einmalig den Ordner als Git-Klon anlegen (Terminal):
+
+```bash
+cd ~/Documents
+git clone -b claude/dreamy-hawking-asgoz0 https://github.com/gutenmorgensebastian/bijoubijou.git Huettenplan
+```
+
+(Ist das Repo privat, fragt Git nach dem GitHub-Benutzernamen und einem Personal Access Token als Passwort; macOS merkt sich beides im Schlüsselbund.)
+
+Danach immer nur **`Huettenplan starten.command`** im Ordner `~/Documents/Huettenplan` doppelklicken. Die Datei
+
+1. holt die neuesten Änderungen von GitHub (`git pull`),
+2. beendet eine noch laufende Instanz,
+3. startet den Hüttenplan neu und öffnet den Browser.
+
+Kein Entpacken von ZIP-Dateien nötig. Die Daten in `data/huettenplan.sqlite` werden dabei nicht angefasst. Ist kein Update möglich (z. B. kein Netz), startet die bisherige Version mit einer Warnung. Ohne Update starten: `HP_NO_UPDATE=1` setzen. Beim ersten Doppelklick fragt macOS evtl. nach der Installation der Entwicklerwerkzeuge (für Git) – bestätigen.
+
+**Vorhandene Daten übernehmen:** In der alten Installation unter Einstellungen den Backup-Link öffnen, die Datei als `data/huettenplan.sqlite` in den neuen Ordner legen (Ordner `data` ggf. anlegen), dann erst starten.
+
+### Von Hand
+
 ```bash
 node server.js            # läuft auf http://localhost:3080
 PORT=8080 node server.js  # anderer Port

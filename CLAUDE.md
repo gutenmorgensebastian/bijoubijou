@@ -15,6 +15,8 @@ Schichtplanung für die Märchenhütten (Monbijoupark, Berlin). Bedienung und Be
 
 ### Start / Entwicklung
 
+Auf dem Mac des Nutzers liegt ein Git-Klon in `~/Documents/Huettenplan`; `Huettenplan starten.command` macht `git pull --ff-only` (aktueller Branch), beendet die Instanz auf dem Port (nur wenn es ein `server.js` ist) und startet neu. **Änderungen wirken dort also erst nach Commit + Push auf den Branch und einem Doppelklick.** Das Skript steckt in einem `{ … }`-Block, damit `git pull` es während des Laufs ersetzen darf – diese Klammerung beim Ändern beibehalten. Bash dort ist 3.2 (macOS): keine Bash-4-Syntax. Getestet mit lokalem Bare-Repo (Update, Neustart, Update nicht möglich, fremder Prozess auf dem Port); auf echtem macOS noch nicht.
+
 ```bash
 node server.js                                        # http://localhost:3080, Admin-PIN 1234
 DATA_DIR=/tmp/hp-test PORT=3998 node server.js        # frische Wegwerf-DB (seed vorher nach /tmp/hp-test kopieren)
