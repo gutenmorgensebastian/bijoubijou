@@ -277,7 +277,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       // --- Plan ---
-      if (p === '/api/shifts') {
+      if (p === '/api/shifts' && req.method === 'GET') {
         const from = url.searchParams.get('from') || setting('season').start, to = url.searchParams.get('to') || setting('season').end;
         const shifts = all('SELECT * FROM shifts WHERE date>=? AND date<=? ORDER BY date,kind DESC', from, to).map(shiftView);
         const avail = all('SELECT * FROM availability WHERE date>=? AND date<=?', from, to);
@@ -302,6 +302,8 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'DELETE' && need(admin)) { run('DELETE FROM assignments WHERE shift_id=?', s.id); run('DELETE FROM demand WHERE shift_id=?', s.id); run('DELETE FROM shifts WHERE id=?', s.id); log(me.id, 'shift.delete', `${s.date} ${s.kind}`); broadcast({ type: 'shifts' }); return json(res, 200, { ok: true }); }
       }
       if (p === '/api/shifts' && req.method === 'POST' && need(admin)) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(body.date || '')) return json(res, 400, { error: 'Datum fehlt (JJJJ-MM-TT)' });
+        if (get('SELECT 1 FROM shifts WHERE date=? AND kind=?', body.date, body.kind || 'abend')) return json(res, 400, { error: 'Für diesen Tag gibt es diese Schicht schon' });
         const r = run('INSERT INTO shifts(date,kind,start,end,manual,note) VALUES(?,?,?,?,1,?)', body.date, body.kind || 'abend', body.start || '17:00', body.end || '23:00', body.note || '');
         const sid = Number(r.lastInsertRowid);
         for (const g of all('SELECT * FROM gewerke WHERE active=1')) run('INSERT INTO demand VALUES(?,?,?)', sid, g.id, body.kind === 'tag' ? g.demand_day : g.demand_eve);

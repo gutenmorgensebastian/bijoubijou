@@ -78,6 +78,7 @@ Quelle der Wahrheit ist der Code; Standardwerte stehen im Seed-Block (`server.js
 |---|---|
 | Start, Seed, Schichtgenerierung | OK – 342 Vorstellungen → 72 Schichten (17 Tag, 55 Abend) |
 | Login, `/api/me`, `bootstrap`, `shifts`, `hours`, `hours.csv`, `performances`, `log`, `todos`, `reports`, `channels`, `/ics`, statische Auslieferung | alle 200; ohne Login 401 |
+| Schicht manuell anlegen | OK (nach Fix, siehe unten) |
 | Einteilen, Gewerk-Beschränkung für Mitarbeitende, Freigeben → Übernehmen | OK |
 | Kommzeit mit/ohne Übergabe, Stundenberechnung | OK (ohne Übergabe 16:00 / 6,5 h) |
 | Admin-Endpunkte als Mitarbeiter | 403, Server läuft weiter (Absturz behoben, siehe unten); Admin-Zugriff unverändert OK |
@@ -87,9 +88,9 @@ Quelle der Wahrheit ist der Code; Standardwerte stehen im Seed-Block (`server.js
 
 `need(admin)` hat früher selbst die 403-Antwort gesendet und `false` geliefert; der Code lief in den `&& need(admin)`-Bedingungen weiter bis zur 404-Antwort, das warf `ERR_HTTP_HEADERS_SENT` und beendete den Prozess. Jetzt **wirft `need` einen Fehler mit `status: 403`**, den der `catch` am Ende des Handlers in eine 403-Antwort umsetzt (und bei bereits gesendeten Headern nur noch die Antwort beendet). Neue Admin-Routen deshalb einfach `need(admin)` aufrufen – kein `return` und keine eigene 403-Antwort nötig. Geprüft: 15 Admin-Routen als Mitarbeiter → 403, Server bleibt oben.
 
-### Bekannter Fehler: Schicht anlegen nicht erreichbar
+### Behoben: Schicht manuell anlegen
 
-`GET`-Zweig `if (p === '/api/shifts')` prüft die Methode nicht und antwortet auch auf `POST` mit der Schichtliste. Der Zweig zum manuellen Anlegen einer Schicht (`POST /api/shifts`) darunter wird dadurch nie erreicht. Noch nicht behoben (Korrektur: `&& req.method === 'GET'` ergänzen).
+Der Listen-Zweig `GET /api/shifts` antwortete früher auch auf `POST`, sodass `POST /api/shifts` (Schicht von Hand anlegen, Button „+ Schicht“ im Plan) nie erreicht wurde. Der Zweig prüft jetzt `req.method === 'GET'`. Das Anlegen verlangt ein Datum `JJJJ-MM-TT` und lehnt eine bereits vorhandene Kombination aus Datum und Schichtart mit 400 ab (statt 500 durch den `UNIQUE`-Constraint). Geprüft: Anlegen als Admin (`manual=1`, Soll-Besetzung aus den Gewerken), Doppelanlage 400, Mitarbeiter 403, und die Schicht übersteht `regenerateShifts`.
 
 ### Empfehlung für Tests
 
