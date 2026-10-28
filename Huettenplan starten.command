@@ -19,6 +19,14 @@ if [ "$MAJOR" -lt 22 ]; then
   read -n 1 -s -r -p "Taste drücken zum Schließen …"; exit 1
 fi
 
+# Neueste Version holen (nur wenn Git vorhanden, Ordner sauber und Internet da)
+if [ -d .git ] && command -v git >/dev/null 2>&1; then
+  if git fetch -q origin main 2>/dev/null; then
+    if [ "$(git branch --show-current)" != "main" ]; then git checkout -q main 2>/dev/null; fi
+    if git merge -q --ff-only origin/main 2>/dev/null; then echo "Version: $(git log --oneline -1)"; else echo "Hinweis: Update übersprungen (lokale Änderungen?)."; fi
+  else echo "Hinweis: kein Internet, starte mit vorhandener Version."; fi
+fi
+
 PORT=${PORT:-3080}
 echo "Hüttenplan startet auf http://localhost:$PORT  (Admin-PIN: 1234)"
 echo "Zum Beenden dieses Fenster schließen oder Ctrl+C drücken."
