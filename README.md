@@ -53,11 +53,15 @@ Zugang von außen wie bei Pratomat über Tailscale (oder Cloudflare Tunnel). Die
 - Warnungen: Minijob-Grenze (603 € in 2026, 633 € ab 2027), Monatsbudget, mehr als 10 h an einem Tag. Sonn- und Feiertage werden in der Stundenliste markiert.
 - Werkstudent:innen: Budget pro Woche in den Stammdaten pflegen (20 h in der Vorlesungszeit).
 
+## Sprache
+
+- Oben rechts schaltet „DE | EN“ die Oberfläche zwischen Deutsch und Englisch um (wird im Browser gemerkt). Die Übersetzung steht in `public/i18n.js`; neue deutsche Texte erscheinen in der englischen Ansicht deutsch, bis sie dort ergänzt werden. Namen, Titel und Chat-Nachrichten werden nie übersetzt.
+
 ## Dateien
 
 ```
 server.js                 Server + API (Node, SQLite eingebaut)
-public/                   Oberfläche (index.html, app.js, style.css)
+public/                   Oberfläche (index.html, app.js, i18n.js, style.css)
 data/spielplan-seed.json  Spielplan für den ersten Start
 data/huettenplan.sqlite   alle Daten (wird beim Start angelegt)
 de.huettenplan.plist      launchd-Vorlage für den Mac Mini
