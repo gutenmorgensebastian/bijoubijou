@@ -29,7 +29,7 @@ Zugang von außen wie bei Pratomat über Tailscale (oder Cloudflare Tunnel). Die
 
 ## Ablauf
 
-1. **Einstellungen** prüfen: Gewerke, Stundensätze, Vorlauf (Einlass −30, Kasse −60 / Übergabe −30, ADL −120 / Übergabe 0), Soll-Besetzung je Schicht, Spitzentage, Tauschmodus.
+1. **Einstellungen** prüfen: Gewerke, Stundensätze, Vorlauf (ADL −2:00, Einlass −1:00, BA −1:00, Kasse −1:15; Kasse endet 30 min nach dem letzten Stück), Soll-Besetzung je Schicht, Spitzentage, Tauschmodus.
 2. **Leute** anlegen: Name, Telefon, Gewerke, Beschäftigungsform, Stundenbudget. Jede Person bekommt eine PIN → Link + PIN per WhatsApp verschicken. Die App kann aufs Handy-Homescreen gelegt werden.
 3. Mitarbeitende tragen unter **Mein Plan** ihre Nicht-Verfügbarkeit ein und unter **Offen** sich selbst in freie Plätze ihrer Gewerke.
 4. Du teilst unter **Plan** per Klick auf eine Schicht ein (Person wählen). Namen mit gelber/roter Wellenlinie sind über 85 % bzw. über ihrem Monatsbudget oder der Minijob-Grenze.
@@ -46,9 +46,10 @@ Zugang von außen wie bei Pratomat über Tailscale (oder Cloudflare Tunnel). Die
 
 ## Regeln in der App
 
-- Tagschicht = Vorstellungen vor 13:00 Uhr, Abendschicht = ab 13:00 Uhr. Schichtbeginn = erste Vorstellung des Blocks, Ende = letzte Vorstellung + 90 min (einstellbar).
-- Kommzeit = Schichtbeginn − Vorlauf des Gewerks. „Übergabe“ gilt, wenn die Tagschicht desselben Tages im selben Gewerk besetzt ist und noch läuft, wenn der normale Vorlauf beginnen würde.
-- Stunden = Kommzeit bis Schichtende (oder eingetragene Ist-Zeiten). Betrag = Stunden × Stundensatz des Gewerks.
+- Arbeitstag je Tag aus dem Spielplan: erstes Stück = frühester Beginn, letztes Stück = spätester Beginn. Beginn = erstes Stück − größter Vorlauf (ADL, 2:00 h), Ende = letztes Stück + Nachlauf (Standard 105 min, mindestens 90 min).
+- Feste Vorläufe vor dem ersten Stück: ADL 2:00 h, Einlass 1:00 h, BA 1:00 h, Kasse 1:15 h. Die Kasse endet 30 Minuten nach Beginn des letzten Stücks (Spalte „Ende nach letztem Stück“ je Gewerk, leer = Ende des Arbeitstags). Alles in den Einstellungen änderbar.
+- Dauert der Arbeitstag mehr als 360 min (Einstellung), wird er in zwei gleich lange Schichten geteilt (Tagschicht = erste Hälfte, Abendschicht = zweite). Sonst gibt es eine Schicht. Gewerke, die in einer Schichthälfte nicht gebraucht werden, bekommen dort Soll 0. Kommzeit/Ende jedes Gewerks werden auf die Schicht zugeschnitten.
+- Stunden = Kommzeit bis Ende des Gewerks in der Schicht (oder eingetragene Ist-Zeiten). Betrag = Stunden × Stundensatz des Gewerks.
 - Warnungen: Minijob-Grenze (603 € in 2026, 633 € ab 2027), Monatsbudget, mehr als 10 h an einem Tag. Sonn- und Feiertage werden in der Stundenliste markiert.
 - Werkstudent:innen: Budget pro Woche in den Stammdaten pflegen (20 h in der Vorlesungszeit).
 
