@@ -55,6 +55,9 @@
     'Spitzentage von': 'Peak days from', 'Spitzen-Wochentage': 'Peak weekdays', 'Schichttausch': 'Shift swapping', 'direkt – Übernahme gilt sofort, Admin wird im Protokoll informiert': 'direct – takeover applies immediately, admin is informed in the log',
     'mit Freigabe – Übernahme bleibt „angefragt“, bis ein Admin bestätigt': 'with approval – takeover stays “requested” until an admin confirms', 'Regeln speichern': 'Save rules',
     'Änderung an Tag/Abend-Grenze, Nachlauf oder Teilung wirkt auf nicht manuell geänderte Schichten nach „Aus Spielplan aktualisieren“.': 'Changes to the day/evening cut-off, wrap-up or split apply to shifts that were not edited by hand after “Update from programme”.',
+    'Arbeitstag teilen': 'Split working day', 'in zwei gleich lange Hälften': 'into two halves of equal length', 'an einer langen Pause zwischen den Stücken (sonst Hälften)': 'at a long break between shows (otherwise halves)',
+    'nie teilen (eine Schicht pro Tag)': 'never split (one shift per day)', 'Als lange Pause zählt ab (min zwischen zwei Stückbeginnen)': 'Counts as a long break from (min between two show start times)',
+    'Beim Speichern werden alle nicht von Hand geänderten Schichten neu berechnet; von Hand geänderte Schichten (Zeiten/Besetzung) bleiben unverändert.': 'On saving, all shifts that were not edited by hand are recalculated; shifts edited by hand (times/staffing) stay unchanged.',
     'Checklisten je Gewerk': 'Checklists per trade', 'Werden in jeder Schicht angezeigt und abgehakt. Phase: start = vor der Vorstellung, ende = danach.': 'Shown and ticked off in every shift. Phase: start = before the performance, ende = after it.',
     'Phase': 'Phase', 'Text': 'Text', '+ Punkt': '+ Item', 'Checklisten speichern': 'Save checklists', 'Daten': 'Data', 'Backup herunterladen (SQLite)': 'Download backup (SQLite)', '– regelmäßig sichern, die Datei liegt im Ordner data/.': '– back up regularly, the file is in the data/ folder.',
     'Arbeitstag': 'Working day',
@@ -99,8 +102,8 @@
     [/^(\d+) Vorstellungen · (\d+) gesamt$/, '$1 performances · $2 total'], [/^(\d+) neue Schichten$/, '$1 new shifts'], [/^(\d+) gelesen, (\d+) neu, (\d+) Schichten angelegt$/, '$1 read, $2 new, $3 shifts created'],
     [/^(\d+) Termine, (\d+) Schichten neu$/, '$1 dates, $2 new shifts'], [/^(\d+) Schichten angelegt$/, '$1 shifts created'], [/^Soll (.+)$/, 'Target $1'], [/^Kein (.+)-Platz in dieser Schicht$/, 'No $1 slot in this shift'],
     [/^(.+) samt Einteilung löschen\?$/, 'Delete $1 including assignments?'], [/^Alle (.+)-Plätze sind belegt – Platz inkl\. Einteilung \((.+)\) entfernen\?$/, 'All $1 slots are taken – remove slot including assignment ($2)?'],
-    [/^Aus dem Spielplan entstehen die Schichten automatisch: Arbeitsbeginn = erstes Stück − größter Vorlauf, Arbeitsende = letztes Stück \+ (\d+) min \(Kasse: eigene Regel je Gewerk\)\. Dauert der Arbeitstag mehr als (\S+) h, wird er in zwei gleich lange Schichten geteilt\.$/,
-      'Shifts are created from the programme automatically: start of work = first show − longest lead time, end of work = last show + $1 min (box office: its own rule per trade). If the working day lasts more than $2 h it is split into two shifts of equal length.'],
+    [/^Aus dem Spielplan entstehen die Schichten automatisch: Arbeitsbeginn = erstes Stück − größter Vorlauf, Arbeitsende = letztes Stück \+ (\d+) min \(Kasse: eigene Regel je Gewerk\)\. Dauert der Arbeitstag mehr als (\S+) h, wird er geteilt \((.+); einstellbar unter „Einstellungen → Regeln“\)\.$/,
+      'Shifts are created from the programme automatically: start of work = first show − longest lead time, end of work = last show + $1 min (box office: its own rule per trade). If the working day lasts more than $2 h it is split ($3; adjustable under “Settings → Rules”).'],
     [/^Neue Zeile = neues Gewerk\. Vorlauf = Minuten vor dem ersten Stück des Tages\. Ende = Minuten nach dem letzten Stück \(leer = Ende des Arbeitstags, z\. B\. Kasse 30\)\. Soll = Standardbesetzung je Schicht; ★ = Spitzentage\.$/,
       'New row = new trade. Lead time = minutes before the first show of the day. End = minutes after the last show (empty = end of the working day, e.g. box office 30). Target = standard staffing per shift; ★ = peak days.'],
     [/^Grün = im Budget, Gelb = über 85 %, Rot = Budget oder Minijob-Grenze \((.+) €\/Monat\) überschritten\. Stunden = Kommzeit bis (.+), bzw\. eingetragene Ist-Zeiten\.$/,
@@ -116,7 +119,7 @@
 
   // ---- einzelne Wörter, überall im Text ----
   const WORDS = [
-    [/\bSchichtende\b/g, 'shift end'], [/\bTagschicht\b/g, 'Day shift'], [/\bAbendschicht\b/g, 'Evening shift'], [/\bSchicht\b/g, 'Shift'], [/\bSchichten\b/g, 'shifts'],
+    [/\bSchichtende\b/g, 'shift end'], [/\bin zwei gleich lange Hälften\b/g, 'into two halves of equal length'], [/\ban einer langen Pause, sonst in Hälften\b/g, 'at a long break, otherwise halves'], [/\bnie\b(?=; einstellbar)/g, 'never'], [/\bTagschicht\b/g, 'Day shift'], [/\bAbendschicht\b/g, 'Evening shift'], [/\bSchicht\b/g, 'Shift'], [/\bSchichten\b/g, 'shifts'],
     [/\bBühnenassistenz\b/g, 'Stage assistant'], [/\bAbenddienstleitung\b/g, 'Evening manager'], [/\bEinlass\b/g, 'Admission'], [/\bKasse\b/g, 'Box office'],
     [/\b(Mo|Di|Mi|Do|Fr|Sa|So)(?= \d{1,2}\.\d)/g, (m) => ({ Mo: 'Mon', Di: 'Tue', Mi: 'Wed', Do: 'Thu', Fr: 'Fri', Sa: 'Sat', So: 'Sun' }[m])],
     [/\b(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)(?= \d{4}\b)/g, (m) => ({ Januar: 'January', Februar: 'February', März: 'March', April: 'April', Mai: 'May', Juni: 'June', Juli: 'July', August: 'August', September: 'September', Oktober: 'October', November: 'November', Dezember: 'December' }[m])],

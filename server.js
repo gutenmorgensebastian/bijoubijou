@@ -51,7 +51,7 @@ const log = (pid, action, detail) => { run('INSERT INTO log(ts,person_id,action,
 // ---------- Seed ----------
 if (!get('SELECT 1 FROM settings WHERE key=?', 'seeded')) {
   setSetting('season', { start: '2026-11-13', end: '2027-01-31', name: 'Märchenhütten Winter 2026/27' });
-  setSetting('rules', { day_cutoff: '13:00', after_min: 105, after_min_floor: 90, split_min: 360, minijob_2026: 603, minijob_2027: 633, max_day_h: 10, rest_h: 11, peak_days: [5, 6, 0], peak_from: '2026-12-01', peak_to: '2026-12-31', swap_mode: 'direct' });
+  setSetting('rules', { day_cutoff: '13:00', after_min: 105, after_min_floor: 90, split_min: 360, split_mode: 'half', pause_min: 180, minijob_2026: 603, minijob_2027: 633, max_day_h: 10, rest_h: 11, peak_days: [5, 6, 0], peak_from: '2026-12-01', peak_to: '2026-12-31', swap_mode: 'direct' });
   setSetting('admin_pin', '1234');
   const gw = [
     ['Kasse', 'K', 15, 75, 0, 1, 1, 2, '#2f6fde'],
@@ -94,26 +94,42 @@ const dow = (d) => new Date(d + 'T12:00:00Z').getUTCDay();
 const isPeak = (date) => { const r = setting('rules'); return date >= r.peak_from && date <= r.peak_to && r.peak_days.includes(dow(date)); };
 const isHoliday = (d) => ['2026-12-25', '2026-12-26', '2027-01-01'].includes(d) || dow(d) === 0;
 
-// Arbeitstag eines Tages aus dem Spielplan: erstes/letztes Stück (frühester/spätester Beginn), Arbeitsbeginn und -ende,
-// bei mehr als split_min Minuten Gesamtdauer Teilung in der Mitte (alle Werte in Minuten, Ende kann über 1440 liegen)
+// Arbeitstag eines Tages aus dem Spielplan: erstes/letztes Stück (frühester/spätester Beginn), Arbeitsbeginn und -ende (Minuten,
+// das Ende kann über 1440 liegen). Teilung je nach Regel split_mode:
+//   'half'  Arbeitstag länger als split_min → zwei gleich lange Schichten (Mitte, auf 5 min gerundet)
+//   'pause' gibt es zwischen zwei Stücken eine Pause von mindestens pause_min (und ohne Überschneidung der Arbeitszeiten),
+//           bekommt jeder Block eine eigene Schicht mit eigenem Beginn/Ende; sonst wie 'half'
+//   'off'   nie teilen
 function dayPlan(date) {
   const rules = setting('rules');
   const ps = all('SELECT time FROM performances WHERE date=? ORDER BY time', date).map(p => toMin(p.time));
   if (!ps.length) return null;
-  const first = ps[0], last = ps[ps.length - 1];
   const lead = Math.max(0, ...all('SELECT lead_min FROM gewerke WHERE active=1').map(g => g.lead_min || 0));
-  const start = first - lead, end = last + Math.max(rules.after_min ?? 105, rules.after_min_floor ?? 0), total = end - start;
-  const split = total > (rules.split_min ?? 360);
-  const mid = split ? start + Math.round(total / 2 / 5) * 5 : null;
-  return { first, last, start, end, total, split, mid };
+  const after = Math.max(rules.after_min ?? 105, rules.after_min_floor ?? 0);
+  const mk = (a) => ({ first: a[0], last: a[a.length - 1], start: a[0] - lead, end: a[a.length - 1] + after });
+  const day = mk(ps); day.total = day.end - day.start;
+  const mode = rules.split_mode || 'half';
+  day.mode = mode; day.blocks = null; day.split = false; day.mid = null;
+  if (mode === 'pause') {
+    let gi = -1, gap = 0;
+    for (let i = 1; i < ps.length; i++) if (ps[i] - ps[i - 1] > gap) { gap = ps[i] - ps[i - 1]; gi = i; }
+    if (gi > 0 && gap >= (rules.pause_min ?? 180)) {
+      const b = [mk(ps.slice(0, gi)), mk(ps.slice(gi))];
+      if (b[0].end < b[1].start) { day.blocks = b; day.split = true; return day; }
+    }
+  }
+  if (mode !== 'off' && day.total > (rules.split_min ?? 360)) { day.split = true; day.mid = day.start + Math.round(day.total / 2 / 5) * 5; }
+  return day;
 }
 // Arbeitsfenster eines Gewerks innerhalb einer Schicht (absolute Minuten): Beginn = erstes Stück − Vorlauf, Ende = Kassenregel
-// (letztes Stück + Minuten) oder Ende des Arbeitstags; beides auf die Schicht zugeschnitten
+// (letztes Stück + Minuten) oder Ende des Arbeitstags; beides auf die Schicht zugeschnitten. Bei Teilung an der Pause gilt
+// „erstes/letztes Stück“ für den Block der Schicht (Tag = erster, Abend = zweiter Block).
 function shiftWin(shift) { const s = toMin(shift.start); let e = toMin(shift.end); if (e <= s) e += 1440; return [s, e]; }
 function gwWindow(shift, gw) {
   const [ss, se] = shiftWin(shift), dp = dayPlan(shift.date);
   if (!dp) return [ss - (gw.lead_min || 0), se]; // von Hand angelegte Schicht ohne Vorstellungen: Beginn der Schicht = erstes Stück
-  const gs = dp.first - (gw.lead_min || 0), ge = gw.end_after_last != null ? dp.last + gw.end_after_last : dp.end;
+  const ref = dp.blocks ? dp.blocks[shift.kind === 'tag' ? 0 : 1] : dp;
+  const gs = ref.first - (gw.lead_min || 0), ge = gw.end_after_last != null ? ref.last + gw.end_after_last : ref.end;
   return [Math.max(ss, gs), Math.min(se, ge)];
 }
 
@@ -125,7 +141,9 @@ function regenerateShifts(pid) {
   let created = 0;
   for (const { date } of dates) {
     const dp = dayPlan(date);
-    const want = dp.split
+    const want = dp.blocks
+      ? [{ kind: 'tag', s: dp.blocks[0].start, e: dp.blocks[0].end }, { kind: 'abend', s: dp.blocks[1].start, e: dp.blocks[1].end }]
+      : dp.split
       ? [{ kind: 'tag', s: dp.start, e: dp.mid }, { kind: 'abend', s: dp.mid, e: dp.end }]
       : [{ kind: dp.first < cutoff ? 'tag' : 'abend', s: dp.start, e: dp.end }];
     for (const w of want) {
@@ -135,7 +153,7 @@ function regenerateShifts(pid) {
       const r = run('INSERT INTO shifts(date,kind,start,end) VALUES(?,?,?,?)', date, w.kind, start, end);
       const sid = Number(r.lastInsertRowid); created++;
       for (const g of gws) {
-        const [a, e] = gwWindow({ date, start, end }, g);
+        const [a, e] = gwWindow({ date, kind: w.kind, start, end }, g);
         const c = e <= a ? 0 : w.kind === 'tag' ? g.demand_day : (isPeak(date) ? g.demand_eve_peak : g.demand_eve);
         run('INSERT INTO demand(shift_id,gewerk_id,count) VALUES(?,?,?)', sid, g.id, c);
       }
@@ -485,7 +503,7 @@ const server = http.createServer(async (req, res) => {
 
       // --- Einstellungen ---
       if (p === '/api/settings' && req.method === 'PUT' && need(admin)) {
-        if (body.rules) setSetting('rules', { ...setting('rules'), ...body.rules });
+        if (body.rules) { setSetting('rules', { ...setting('rules'), ...body.rules }); regenerateShifts(me.id); }
         if (body.season) setSetting('season', { ...setting('season'), ...body.season });
         if (body.gewerke) for (const g of body.gewerke) { if (g.id) run('UPDATE gewerke SET name=?,short=?,rate=?,lead_min=?,lead_handover_min=?,end_after_last=?,demand_day=?,demand_eve=?,demand_eve_peak=?,color=?,sort=?,active=? WHERE id=?', g.name, g.short, g.rate, g.lead_min, g.lead_handover_min ?? 0, g.end_after_last ?? null, g.demand_day, g.demand_eve, g.demand_eve_peak, g.color, g.sort ?? 0, g.active ?? 1, g.id); else { const r = run('INSERT INTO gewerke(name,short,rate,lead_min,lead_handover_min,end_after_last,demand_day,demand_eve,demand_eve_peak,color,sort) VALUES(?,?,?,?,?,?,?,?,?,?,?)', g.name, g.short, g.rate, g.lead_min, g.lead_handover_min ?? 0, g.end_after_last ?? null, g.demand_day, g.demand_eve, g.demand_eve_peak, g.color || '#666', g.sort ?? 99); for (const s of all('SELECT id FROM shifts')) run('INSERT OR IGNORE INTO demand VALUES(?,?,0)', s.id, Number(r.lastInsertRowid)); } }
         if (body.checklist) { run('DELETE FROM checklist'); body.checklist.forEach((c, i) => run('INSERT INTO checklist(gewerk_id,text,phase,sort) VALUES(?,?,?,?)', c.gewerk_id, c.text, c.phase || 'start', i)); }
