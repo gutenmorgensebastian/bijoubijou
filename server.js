@@ -239,7 +239,7 @@ function personStats(pid, month) {
   if (p && month) {
     const limit = month.startsWith('2027') ? rules.minijob_2027 : rules.minijob_2026;
     if (p.employment === 'minijob' && pay > limit) warnings.push(`Minijob-Grenze ${limit} € überschritten (${pay.toFixed(0)} €)`);
-    if (hours > p.budget_month) warnings.push(`Monatsbudget ${p.budget_month} h überschritten (${hours.toFixed(1)} h)`);
+    if (!p.fixed && hours > p.budget_month) warnings.push(`Monatsbudget ${p.budget_month} h überschritten (${hours.toFixed(1)} h)`);
     Object.entries(days).filter(([, h]) => h > rules.max_day_h).forEach(([d, h]) => warnings.push(`${d}: ${h.toFixed(1)} h am Tag (max. ${rules.max_day_h})`));
   }
   return { hours: Math.round(hours * 10) / 10, pay: Math.round(pay * 100) / 100, lines, warnings };
@@ -373,8 +373,8 @@ const server = http.createServer(async (req, res) => {
         // Budget-Ampel je Person und Monat: ok / warn (>85 %) / bad (Budget oder Minijob-Grenze überschritten)
         const months = [...new Set(shifts.map(s => s.date.slice(0, 7)))];
         const budget = {};
-        for (const pp of all('SELECT id,budget_month FROM people WHERE active=1')) for (const mo of months) {
-          const st = personStats(pp.id, mo); const pct = st.hours / (pp.budget_month || 1);
+        for (const pp of all('SELECT id,budget_month,fixed FROM people WHERE active=1')) for (const mo of months) {
+          const st = personStats(pp.id, mo); const pct = pp.fixed ? 0 : st.hours / (pp.budget_month || 1); // „Schichten fix“: Kontingent = die eingetragenen Schichten
           budget[`${pp.id}:${mo}`] = { hours: st.hours, level: st.warnings.length || pct > 1 ? 'bad' : pct > 0.85 ? 'warn' : 'ok' };
         }
         return json(res, 200, { shifts, availability: avail, budget });
@@ -502,8 +502,8 @@ const server = http.createServer(async (req, res) => {
       // --- Stunden ---
       if (p === '/api/hours') {
         const month = url.searchParams.get('month');
-        const ids = admin ? all('SELECT id,name,employment,budget_month FROM people WHERE active=1 ORDER BY name') : [{ id: me.id, name: me.name, employment: me.employment, budget_month: me.budget_month }];
-        return json(res, 200, ids.map(pp => ({ ...pp, ...personStats(pp.id, month) })));
+        const ids = admin ? all('SELECT id,name,employment,budget_month,fixed FROM people WHERE active=1 ORDER BY name') : [{ id: me.id, name: me.name, employment: me.employment, budget_month: me.budget_month, fixed: me.fixed }];
+        return json(res, 200, ids.map(pp => { const st = personStats(pp.id, month); return { ...pp, ...st, budget_month: pp.fixed ? st.hours : pp.budget_month }; })); // fix: Budget = Summe der Schichten
       }
       if (p === '/api/hours.csv' && need(admin)) {
         const month = url.searchParams.get('month');

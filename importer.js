@@ -95,7 +95,7 @@ module.exports = (ctx) => {
     const sheets = readXlsx(buf);
     const gwRows = all('SELECT * FROM gewerke WHERE active=1'), gws = Object.fromEntries(gwRows.map(g => [g.short.toUpperCase(), g]));
     const people = loadPeople();
-    const out = { people: { created: [], updated: [] }, blocks: 0, assignments: { added: 0, existing: 0, doppelt: 0 }, offen: 0, shiftsCreated: 0, unresolved: {}, blockedPeople: [] };
+    const out = { people: { created: [], updated: [] }, blocks: 0, assignments: { added: 0, existing: 0, doppelt: 0 }, offen: 0, shiftsCreated: 0, unresolved: {}, blockedPeople: [], konflikte: [] };
     const miss = (n) => { out.unresolved[n] = (out.unresolved[n] || 0) + 1; };
     if (apply) db.exec('BEGIN');
     try {
@@ -113,6 +113,7 @@ module.exports = (ctx) => {
         (isNew ? out.people.created : out.people.updated).push(p.name);
       }
       // SPERRER: gesperrte Tage je Person (X, D.B., S, …)
+      const blocked = new Set(); // 'personId:Datum'
       const sp = sheets.SPERRER || {}, head = sp[1] || {}, cols = {}, used = new Set();
       const order = Object.entries(head).sort((a, b) => /[.\s]\S/.test(b[1]) - /[.\s]\S/.test(a[1])); // „Juliane T.“ vor „Juliane“
       for (const [c, nm] of order) { const p = resolve(people, nm, null, used); if (p) { cols[c] = p; used.add(p.id); } else if (typeof nm === 'string') miss('SPERRER: ' + nm); }
@@ -120,7 +121,7 @@ module.exports = (ctx) => {
       for (const [rn, row] of Object.entries(sp)) {
         if (+rn < 2 || typeof row.B !== 'number' || row.B < 40000) continue;
         const date = serialToDate(row.B);
-        for (const [c, p] of Object.entries(cols)) if (row[c] != null && String(row[c]).trim()) { out.blocks++; ins?.run(p.id, date, 'SPERRER ' + String(row[c]).trim()); }
+        for (const [c, p] of Object.entries(cols)) if (row[c] != null && String(row[c]).trim()) { out.blocks++; blocked.add(p.id + ':' + date); ins?.run(p.id, date, 'SPERRER ' + String(row[c]).trim()); }
       }
       out.blockedPeople = [...new Set(Object.values(cols).map(p => p.name))];
       // Schichtplan: Einteilungen je Position
@@ -154,6 +155,7 @@ module.exports = (ctx) => {
             if (!p) { miss(nm); continue; }
             const key = best.id + ':' + p.id;
             if (taken.has(key) || (best.id > 0 && get("SELECT 1 FROM assignments WHERE shift_id=? AND person_id=? AND status!='frei'", best.id, p.id))) { out.assignments[taken.has(key) ? 'doppelt' : 'existing']++; continue; }
+            if (blocked.has(p.id + ':' + date)) out.konflikte.push({ name: p.name, date, gewerk: e.g });
             taken.add(key); out.assignments.added++;
             if (apply) run("INSERT INTO assignments(shift_id,gewerk_id,person_id,status,created) VALUES(?,?,?,'fest',?)", best.id, g.id, p.id, now());
           }

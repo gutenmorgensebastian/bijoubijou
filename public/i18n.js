@@ -107,6 +107,7 @@
   const PAT = [
     [/^(\d+) von (\d+)$/, '$1 of $2'], [/^(\d+) bleiben offen$/, '$1 remain open'], [/^(\d+) Einteilungen übernommen(.*)$/, '$1 assignments applied$2'], [/^, (\d+) übersprungen$/, ', $1 skipped'],
     [/^Übernommen: (\d+) neue Personen, (\d+) aktualisiert$/, 'Applied: $1 new people, $2 updated'], [/^Übernommen: (\d+) Einteilungen, (\d+) Sperrtage, (\d+) neue Personen$/, 'Applied: $1 assignments, $2 blocked days, $3 new people'],
+    [/^fix: nur eingetragene Schichten$/, 'fixed: only the scheduled shifts'], [/^Keine Einteilung auf gesperrten Tagen\.$/, 'No assignment on blocked days.'],
     [/^Woche ab (.+)$/, 'Week from $1'], [/^(\d+) Tage$/, '$1 days'], [/^Übernommen\.$/, 'Applied.'], [/^Vorschau:$/, 'Preview:'], [/^Alle (.+)-Plätze sind belegt/, 'All $1 slots are taken'],
     [/^(\d+) Einteilungen vom Planer übernommen(.*)$/, '$1 assignments applied from the planner$2'],
     [/^(\d+) Plätze? offen$/, '$1 open slots'], [/^⚠ (\d+) über Budget$/, '⚠ $1 over budget'], [/^(\d+) fehlt$/, '$1 missing'], [/^(\d+) Vorst\. · (.+)$/, '$1 perf. · $2'],
