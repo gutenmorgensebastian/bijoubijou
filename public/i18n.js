@@ -55,6 +55,7 @@
     'Spitzentage von': 'Peak days from', 'Spitzen-Wochentage': 'Peak weekdays', 'Schichttausch': 'Shift swapping', 'direkt – Übernahme gilt sofort, Admin wird im Protokoll informiert': 'direct – takeover applies immediately, admin is informed in the log',
     'mit Freigabe – Übernahme bleibt „angefragt“, bis ein Admin bestätigt': 'with approval – takeover stays “requested” until an admin confirms', 'Regeln speichern': 'Save rules',
     'Änderung an Tag/Abend-Grenze, Nachlauf oder Teilung wirkt auf nicht manuell geänderte Schichten nach „Aus Spielplan aktualisieren“.': 'Changes to the day/evening cut-off, wrap-up or split apply to shifts that were not edited by hand after “Update from programme”.',
+    'Schicht höchstens (min)': 'Shift at most (min)',
     'Arbeitstag teilen': 'Split working day', 'in zwei gleich lange Hälften': 'into two halves of equal length', 'an einer langen Pause zwischen den Stücken (sonst Hälften)': 'at a long break between shows (otherwise halves)',
     'nie teilen (eine Schicht pro Tag)': 'never split (one shift per day)', 'Als lange Pause zählt ab (min zwischen zwei Stückbeginnen)': 'Counts as a long break from (min between two show start times)',
     'Beim Speichern werden alle nicht von Hand geänderten Schichten neu berechnet; von Hand geänderte Schichten (Zeiten/Besetzung) bleiben unverändert.': 'On saving, all shifts that were not edited by hand are recalculated; shifts edited by hand (times/staffing) stay unchanged.',
@@ -119,7 +120,7 @@
 
   // ---- einzelne Wörter, überall im Text ----
   const WORDS = [
-    [/\bSchichtende\b/g, 'shift end'], [/\bin zwei gleich lange Hälften\b/g, 'into two halves of equal length'], [/\ban einer langen Pause, sonst in Hälften\b/g, 'at a long break, otherwise halves'], [/\bnie\b(?=; einstellbar)/g, 'never'], [/\bTagschicht\b/g, 'Day shift'], [/\bAbendschicht\b/g, 'Evening shift'], [/\bSchicht\b/g, 'Shift'], [/\bSchichten\b/g, 'shifts'],
+    [/\bSchichtende\b/g, 'shift end'], [/\bin zwei gleich lange Hälften\b/g, 'into two halves of equal length'], [/\ban einer langen Pause, sonst in Hälften\b/g, 'at a long break, otherwise halves'], [/\bnie\b(?=; einstellbar)/g, 'never'], [/\bTagschicht\b/g, 'Day shift'], [/\bZwischenschicht\b/g, 'Middle shift'], [/\bAbendschicht\b/g, 'Evening shift'], [/\bSchicht\b/g, 'Shift'], [/\bSchichten\b/g, 'shifts'],
     [/\bBühnenassistenz\b/g, 'Stage assistant'], [/\bAbenddienstleitung\b/g, 'Evening manager'], [/\bEinlass\b/g, 'Admission'], [/\bKasse\b/g, 'Box office'],
     [/\b(Mo|Di|Mi|Do|Fr|Sa|So)(?= \d{1,2}\.\d)/g, (m) => ({ Mo: 'Mon', Di: 'Tue', Mi: 'Wed', Do: 'Thu', Fr: 'Fri', Sa: 'Sat', So: 'Sun' }[m])],
     [/\b(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)(?= \d{4}\b)/g, (m) => ({ Januar: 'January', Februar: 'February', März: 'March', April: 'April', Mai: 'May', Juni: 'June', Juli: 'July', August: 'August', September: 'September', Oktober: 'October', November: 'November', Dezember: 'December' }[m])],

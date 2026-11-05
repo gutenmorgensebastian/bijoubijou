@@ -40,7 +40,8 @@ try { db.exec('ALTER TABLE gewerke ADD COLUMN end_after_last INTEGER'); } catch 
 const q = (sql) => db.prepare(sql);
 const all = (sql, ...p) => q(sql).all(...p);
 const get = (sql, ...p) => q(sql).get(...p);
-const run = (sql, ...p) => q(sql).run(...p);
+const planCache = new Map(); // Arbeitstage je Datum; wird bei Änderungen an Spielplan, Gewerken und Regeln geleert
+const run = (sql, ...p) => { if (/performances|gewerke|settings/i.test(sql)) planCache.clear(); return q(sql).run(...p); };
 const now = () => new Date().toISOString();
 const setting = (k, d) => { const r = get('SELECT value FROM settings WHERE key=?', k); return r ? JSON.parse(r.value) : d; };
 const setSetting = (k, v) => run('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', k, JSON.stringify(v));
@@ -51,13 +52,13 @@ const log = (pid, action, detail) => { run('INSERT INTO log(ts,person_id,action,
 // ---------- Seed ----------
 if (!get('SELECT 1 FROM settings WHERE key=?', 'seeded')) {
   setSetting('season', { start: '2026-11-13', end: '2027-01-31', name: 'Märchenhütten Winter 2026/27' });
-  setSetting('rules', { day_cutoff: '13:00', after_min: 105, after_min_floor: 90, split_min: 360, split_mode: 'half', pause_min: 180, minijob_2026: 603, minijob_2027: 633, max_day_h: 10, rest_h: 11, peak_days: [5, 6, 0], peak_from: '2026-12-01', peak_to: '2026-12-31', swap_mode: 'direct' });
+  setSetting('rules', { day_cutoff: '13:00', after_min: 105, after_min_floor: 90, split_min: 360, max_shift_min: 360, split_mode: 'half', pause_min: 180, minijob_2026: 603, minijob_2027: 633, max_day_h: 10, rest_h: 11, peak_days: [5, 6, 0], peak_from: '2026-12-01', peak_to: '2026-12-31', swap_mode: 'direct' });
   setSetting('admin_pin', '1234');
   const gw = [
-    ['Kasse', 'K', 15, 75, 0, 1, 1, 2, '#2f6fde'],
-    ['Einlass', 'E', 15, 60, 0, 1, 2, 3, '#1f9d55'],
-    ['Bühnenassistenz', 'BA', 16, 60, 0, 0, 1, 2, '#b7791f'],
-    ['Abenddienstleitung', 'ADL', 18, 120, 0, 0, 1, 1, '#c53030'],
+    ['Kasse', 'K', 15, 75, 0, 1, 1, 1, '#2f6fde'],
+    ['Einlass', 'E', 15, 60, 0, 1, 1, 1, '#1f9d55'],
+    ['Bühnenassistenz', 'BA', 16, 60, 0, 2, 2, 2, '#b7791f'],
+    ['Abenddienstleitung', 'ADL', 18, 90, 0, 1, 1, 1, '#c53030'],
   ];
   gw.forEach((g, i) => run('INSERT INTO gewerke(name,short,rate,lead_min,lead_handover_min,demand_day,demand_eve,demand_eve_peak,color,sort) VALUES(?,?,?,?,?,?,?,?,?,?)', ...g, i));
   const cl = {
@@ -95,12 +96,18 @@ const isPeak = (date) => { const r = setting('rules'); return date >= r.peak_fro
 const isHoliday = (d) => ['2026-12-25', '2026-12-26', '2027-01-01'].includes(d) || dow(d) === 0;
 
 // Arbeitstag eines Tages aus dem Spielplan: erstes/letztes Stück (frühester/spätester Beginn), Arbeitsbeginn und -ende (Minuten,
-// das Ende kann über 1440 liegen). Teilung je nach Regel split_mode:
-//   'half'  Arbeitstag länger als split_min → zwei gleich lange Schichten (Mitte, auf 5 min gerundet)
+// das Ende kann über 1440 liegen) und die Aufteilung in Schichten (day.parts, je Teil kind/s/e/ref). Regel split_mode:
+//   'half'  Arbeitstag länger als split_min → gleich lange Schichten (Mitte, auf 5 min gerundet)
 //   'pause' gibt es zwischen zwei Stücken eine Pause von mindestens pause_min (und ohne Überschneidung der Arbeitszeiten),
 //           bekommt jeder Block eine eigene Schicht mit eigenem Beginn/Ende; sonst wie 'half'
 //   'off'   nie teilen
+// Zusätzlich gilt max_shift_min (Standard 360): ist eine Schicht länger, wird sie weiter in gleich lange Teile geteilt
+// (höchstens 3 Schichten pro Tag: tag, mitte, abend); nur bei „nie teilen“ bleibt es bei einer Schicht.
 function dayPlan(date) {
+  if (planCache.has(date)) return planCache.get(date);
+  const day = computeDayPlan(date); planCache.set(date, day); return day;
+}
+function computeDayPlan(date) {
   const rules = setting('rules');
   const ps = all('SELECT time FROM performances WHERE date=? ORDER BY time', date).map(p => toMin(p.time));
   if (!ps.length) return null;
@@ -108,44 +115,56 @@ function dayPlan(date) {
   const after = Math.max(rules.after_min ?? 105, rules.after_min_floor ?? 0);
   const mk = (a) => ({ first: a[0], last: a[a.length - 1], start: a[0] - lead, end: a[a.length - 1] + after });
   const day = mk(ps); day.total = day.end - day.start;
-  const mode = rules.split_mode || 'half';
-  day.mode = mode; day.blocks = null; day.split = false; day.mid = null;
+  const mode = rules.split_mode || 'half', maxLen = rules.max_shift_min || 0;
+  const cut = (s, e, n, ref) => Array.from({ length: n }, (_, i) => ({ s: i ? s + Math.round((e - s) * i / n / 5) * 5 : s, e: i === n - 1 ? e : s + Math.round((e - s) * (i + 1) / n / 5) * 5, ref }));
+  let parts = null;
   if (mode === 'pause') {
     let gi = -1, gap = 0;
     for (let i = 1; i < ps.length; i++) if (ps[i] - ps[i - 1] > gap) { gap = ps[i] - ps[i - 1]; gi = i; }
     if (gi > 0 && gap >= (rules.pause_min ?? 180)) {
       const b = [mk(ps.slice(0, gi)), mk(ps.slice(gi))];
-      if (b[0].end < b[1].start) { day.blocks = b; day.split = true; return day; }
+      if (b[0].end < b[1].start) {
+        parts = b.map(x => ({ s: x.start, e: x.end, ref: x }));
+        if (maxLen) { // längsten Block weiter teilen, solange es höchstens 3 Schichten bleiben
+          const i = parts[0].e - parts[0].s >= parts[1].e - parts[1].s ? 0 : 1, p = parts[i];
+          if (p.e - p.s > maxLen && Math.ceil((p.e - p.s) / maxLen) === 2) parts.splice(i, 1, ...cut(p.s, p.e, 2, p.ref));
+        }
+      }
     }
   }
-  if (mode !== 'off' && day.total > (rules.split_min ?? 360)) { day.split = true; day.mid = day.start + Math.round(day.total / 2 / 5) * 5; }
+  if (!parts) {
+    let n = 1;
+    if (mode !== 'off') {
+      if (day.total > (rules.split_min ?? 360)) n = 2;
+      if (maxLen) n = Math.max(n, Math.ceil(day.total / maxLen));
+    }
+    parts = cut(day.start, day.end, Math.min(n, 3), day);
+  }
+  const kinds = parts.length === 1 ? [day.first < toMin(rules.day_cutoff) ? 'tag' : 'abend'] : parts.length === 2 ? ['tag', 'abend'] : ['tag', 'mitte', 'abend'];
+  day.parts = parts.map((x, i) => ({ ...x, kind: kinds[i] }));
+  day.split = day.parts.length > 1; day.mode = mode;
   return day;
 }
 // Arbeitsfenster eines Gewerks innerhalb einer Schicht (absolute Minuten): Beginn = erstes Stück − Vorlauf, Ende = Kassenregel
 // (letztes Stück + Minuten) oder Ende des Arbeitstags; beides auf die Schicht zugeschnitten. Bei Teilung an der Pause gilt
-// „erstes/letztes Stück“ für den Block der Schicht (Tag = erster, Abend = zweiter Block).
+// „erstes/letztes Stück“ für den Block der Schicht.
 function shiftWin(shift) { const s = toMin(shift.start); let e = toMin(shift.end); if (e <= s) e += 1440; return [s, e]; }
 function gwWindow(shift, gw) {
   const [ss, se] = shiftWin(shift), dp = dayPlan(shift.date);
   if (!dp) return [ss - (gw.lead_min || 0), se]; // von Hand angelegte Schicht ohne Vorstellungen: Beginn der Schicht = erstes Stück
-  const ref = dp.blocks ? dp.blocks[shift.kind === 'tag' ? 0 : 1] : dp;
+  const ref = dp.parts.find(x => x.kind === shift.kind)?.ref || dp;
   const gs = ref.first - (gw.lead_min || 0), ge = gw.end_after_last != null ? ref.last + gw.end_after_last : ref.end;
   return [Math.max(ss, gs), Math.min(se, ge)];
 }
 
 function regenerateShifts(pid) {
   const rules = setting('rules');
-  const cutoff = toMin(rules.day_cutoff);
   const dates = all('SELECT DISTINCT date FROM performances ORDER BY date');
   const gws = all('SELECT * FROM gewerke WHERE active=1');
   let created = 0;
   for (const { date } of dates) {
     const dp = dayPlan(date);
-    const want = dp.blocks
-      ? [{ kind: 'tag', s: dp.blocks[0].start, e: dp.blocks[0].end }, { kind: 'abend', s: dp.blocks[1].start, e: dp.blocks[1].end }]
-      : dp.split
-      ? [{ kind: 'tag', s: dp.start, e: dp.mid }, { kind: 'abend', s: dp.mid, e: dp.end }]
-      : [{ kind: dp.first < cutoff ? 'tag' : 'abend', s: dp.start, e: dp.end }];
+    const want = dp.parts;
     for (const w of want) {
       const start = toT(w.s), end = toT(w.e);
       const ex = get('SELECT * FROM shifts WHERE date=? AND kind=?', date, w.kind);
@@ -266,6 +285,13 @@ if (!get("SELECT 1 FROM settings WHERE key='zeitlogik_v2'")) {
   setSetting('rules', { ...setting('rules'), after_min: 105, after_min_floor: 90, split_min: 360 });
   for (const [short, lead, endAfter] of [['K', 75, 30], ['E', 60, null], ['BA', 60, null], ['ADL', 120, null]]) run('UPDATE gewerke SET lead_min=?,end_after_last=? WHERE short=?', lead, endAfter, short);
   setSetting('zeitlogik_v2', true); setSetting('needs_generate', true);
+}
+// Einmalige Umstellung: ADL 90 min Vorlauf, Besetzung Kasse 1 / Einlass 1 (eine Person für beide Hütten) / BA 2 / ADL 1, Schichten höchstens 6 h
+if (!get("SELECT 1 FROM settings WHERE key='zeitlogik_v3'")) {
+  setSetting('rules', { ...setting('rules'), max_shift_min: 360 });
+  run("UPDATE gewerke SET lead_min=90 WHERE short='ADL' AND lead_min=120");
+  for (const [short, d, e, pk] of [['K', 1, 1, 1], ['E', 1, 1, 1], ['BA', 2, 2, 2], ['ADL', 1, 1, 1]]) run('UPDATE gewerke SET demand_day=?,demand_eve=?,demand_eve_peak=? WHERE short=?', d, e, pk, short);
+  setSetting('zeitlogik_v3', true); setSetting('needs_generate', true);
 }
 if (setting('needs_generate')) { regenerateShifts(null); setSetting('needs_generate', false); }
 
