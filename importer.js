@@ -27,18 +27,32 @@ module.exports = (ctx) => {
     return c.length === 1 ? c[0] : null;
   }
 
+  // Zeitraum aus Text: „ab Dezember“, „nur im Dezember“, „kann noch 30h im Dezember“, „ab 13.11.“
+  const MONTHS = ['januar', 'februar', 'märz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'];
+  function monthDates(name) {
+    const mi = MONTHS.indexOf(String(name).toLowerCase()); if (mi < 0) return null;
+    const season = ctx.setting('season'), y = mi + 1 >= 7 ? +season.start.slice(0, 4) : +season.end.slice(0, 4);
+    return { from: new Date(Date.UTC(y, mi, 1)).toISOString().slice(0, 10), until: new Date(Date.UTC(y, mi + 1, 0)).toISOString().slice(0, 10) };
+  }
+  function windowIn(text) {
+    const t = String(text || ''), season = ctx.setting('season');
+    let m = /nur im (\p{L}+)/iu.exec(t) || /kann noch .*? im (\p{L}+)/iu.exec(t); if (m && monthDates(m[1])) return monthDates(m[1]);
+    m = /\bab (?:dem )?(\d{1,2})\.(\d{1,2})\./i.exec(t); if (m) { const mo = +m[2], y = mo >= 7 ? +season.start.slice(0, 4) : +season.end.slice(0, 4); return { from: `${y}-${String(mo).padStart(2, '0')}-${String(+m[1]).padStart(2, '0')}`, until: '' }; }
+    m = /\bab (\p{L}+)/iu.exec(t); if (m && monthDates(m[1])) return { from: monthDates(m[1]).from, until: '' };
+    return null;
+  }
   function newPerson(people, apply, fields) {
     const pin = (() => { let x; do x = String(Math.floor(1000 + Math.random() * 9000)); while (get('SELECT 1 FROM people WHERE pin=?', x) || people.some(p => p.pin === x)); return x; })();
     const row = { name: fields.name, phone: '', email: '', pin, role: 'staff', employment: EMP_DEFAULT, budget_month: 40, budget_week: 20, gw: [], main: [], fixed: 0, notes: '', active: 1, aliases: '', ...fields };
     if (apply) {
-      const r = run('INSERT INTO people(name,phone,email,pin,token,role,employment,budget_month,budget_week,gewerke,main_gewerke,fixed,aliases,notes,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        row.name, '', '', pin, crypto.randomBytes(12).toString('hex'), 'staff', row.employment, row.budget_month, row.budget_week, JSON.stringify(row.gw), JSON.stringify(row.main), row.fixed, row.aliases, row.notes, now());
+      const r = run('INSERT INTO people(name,phone,email,pin,token,role,employment,budget_month,budget_week,gewerke,main_gewerke,fixed,aliases,available_from,available_until,notes,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        row.name, '', '', pin, crypto.randomBytes(12).toString('hex'), 'staff', row.employment, row.budget_month, row.budget_week, JSON.stringify(row.gw), JSON.stringify(row.main), row.fixed, row.aliases, '', '', row.notes, now());
       row.id = Number(r.lastInsertRowid);
     } else row.id = -(people.length + 1);
     row.n = norm(row.name); row.virtual = !apply; people.push(row); return row;
   }
   function savePerson(p) {
-    run('UPDATE people SET gewerke=?,main_gewerke=?,fixed=?,budget_month=?,budget_week=?,employment=?,aliases=?,notes=? WHERE id=?', JSON.stringify(p.gw), JSON.stringify(p.main), p.fixed || 0, p.budget_month, p.budget_week, p.employment, p.aliases || '', p.notes || '', p.id);
+    run('UPDATE people SET gewerke=?,main_gewerke=?,fixed=?,budget_month=?,budget_week=?,employment=?,aliases=?,available_from=?,available_until=?,notes=? WHERE id=?', JSON.stringify(p.gw), JSON.stringify(p.main), p.fixed || 0, p.budget_month, p.budget_week, p.employment, p.aliases || '', p.available_from || '', p.available_until || '', p.notes || '', p.id);
   }
 
   // ---------- Textliste ----------
@@ -59,7 +73,7 @@ module.exports = (ctx) => {
       if (!NAME_RE.test(name) || / und /i.test(name) || /^(Für|Wenn|Wer|Schön|Die|Der|Das|ADL)\b/.test(name)) continue;
       const rest = line.slice(cut), vorw = /vorwiegend\s+(.*)$/i.exec(rest);
       const gw = gewerkeIn(rest);
-      rows.push({ name, week: hrs ? Number(hrs[1].replace(',', '.')) : null, plus: !!hrs?.[2], cap: cap ? Number(cap[1].replace(',', '.')) : null, capMonth: cap?.[2] || '', fixed, gw, main: vorw ? gewerkeIn(vorw[1]) : gw, line });
+      rows.push({ win: windowIn(line), name, week: hrs ? Number(hrs[1].replace(',', '.')) : null, plus: !!hrs?.[2], cap: cap ? Number(cap[1].replace(',', '.')) : null, capMonth: cap?.[2] || '', fixed, gw, main: vorw ? gewerkeIn(vorw[1]) : gw, line });
     }
     return rows;
   }
@@ -92,10 +106,11 @@ module.exports = (ctx) => {
         else if (r.cap != null) { p.budget_month = r.cap; p.budget_week = Math.round(r.cap / 4.45 * 10) / 10; }
         else if (r.week != null) { p.budget_week = r.week; p.budget_month = Math.ceil(r.week * 4.45 * (r.plus ? 1.15 : 1)); }
         if (!r.fixed) p.fixed = 0;
+        if (r.win) { p.available_from = r.win.from; p.available_until = r.win.until; }
         p.employment = p.employment === 'leitung' ? 'leitung' : EMP_DEFAULT;
         p.notes = [p.notes, p.notes?.includes(r.line) ? '' : r.line].filter(Boolean).join('\n');
         if (apply) savePerson(p);
-        (isNew ? out.created : out.updated).push({ name: p.name, week: r.week, plus: r.plus, cap: r.cap, fixed: r.fixed, gewerke: r.gw, main: r.main });
+        (isNew ? out.created : out.updated).push({ von: r.win?.from || '', bis: r.win?.until || '', name: p.name, week: r.week, plus: r.plus, cap: r.cap, fixed: r.fixed, gewerke: r.gw, main: r.main });
       }
       if (apply) { if (pr.together.length) ctx.setSetting('keep_together', pr.together); if (Object.keys(pr.rules).length) ctx.setSetting('rules', { ...ctx.setting('rules'), ...pr.rules }); db.exec('COMMIT'); log(null, 'import.people', `${out.created.length} neu, ${out.updated.length} aktualisiert`); }
     } catch (e) { if (apply) db.exec('ROLLBACK'); throw e; }
@@ -138,6 +153,15 @@ module.exports = (ctx) => {
         for (const [c, p] of Object.entries(cols)) if (row[c] != null && String(row[c]).trim()) { out.blocks++; blocked.add(p.id + ':' + date); ins?.run(p.id, date, 'SPERRER ' + String(row[c]).trim()); }
       }
       out.blockedPeople = [...new Set(Object.values(cols).map(p => p.name))];
+      // Bewerber: Verfügbarkeit („ab Dezember“, „ab 13.11.“) für bekannte Personen übernehmen, sofern dort noch nichts steht
+      out.verfuegbar = [];
+      for (const [rn, row] of Object.entries(sheets.Bewerber || {})) {
+        if (+rn < 2 || typeof row.B !== 'string') continue;
+        const p = resolve(people, row.B.replace(/\s+/g, ' ').trim(), null), w = p && windowIn(row.G);
+        if (!p || !w || p.available_from || p.available_until || p.virtual) continue;
+        p.available_from = w.from; p.available_until = w.until; out.verfuegbar.push({ name: p.name, von: w.from, bis: w.until });
+        if (apply) savePerson(p);
+      }
       // Schichtplan: Einteilungen je Position
       const cutoff = toMin(ctx.setting('rules').day_cutoff || '13:00');
       const taken = new Set(); // shift:person (auch in der Vorschau)

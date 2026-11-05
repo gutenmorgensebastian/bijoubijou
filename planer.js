@@ -20,7 +20,7 @@ module.exports = (ctx) => {
     const gws = all('SELECT * FROM gewerke WHERE active=1'), gwById = Object.fromEntries(gws.map(g => [g.id, g]));
 
     // Personen
-    const P = all('SELECT * FROM people WHERE active=1').map(p => ({ id: p.id, name: p.name, gw: new Set(JSON.parse(p.gewerke || '[]')), main: new Set(JSON.parse(p.main_gewerke || '[]')), fixed: !!p.fixed, leit: p.role === 'admin' || p.employment === 'leitung', target: p.budget_week || 0, cap: p.budget_month || 0, items: [], week: {}, month: {}, days: {}, wknd: 0 }));
+    const P = all('SELECT * FROM people WHERE active=1').map(p => ({ id: p.id, name: p.name, gw: new Set(JSON.parse(p.gewerke || '[]')), main: new Set(JSON.parse(p.main_gewerke || '[]')), from: p.available_from || '', until: p.available_until || '', fixed: !!p.fixed, leit: p.role === 'admin' || p.employment === 'leitung', target: p.budget_week || 0, cap: p.budget_month || 0, items: [], week: {}, month: {}, days: {}, wknd: 0 }));
     const byId = Object.fromEntries(P.map(p => [p.id, p]));
     const plannable = (p) => !p.fixed && !p.leit && p.gw.size && p.target > 0 && p.target < 90;
     const avail = {}; for (const a of all("SELECT * FROM availability WHERE status IN ('no','maybe')")) (avail[a.person_id] ||= {})[a.date] = a.status;
@@ -59,6 +59,7 @@ module.exports = (ctx) => {
     function judge(p, sl, pass, why) {
       const no = (r) => { why?.set(r, (why.get(r) || 0) + 1); return null; };
       if (!p.gw.has(sl.g.id)) return no('nicht qualifiziert');
+      if ((p.from && sl.date < p.from) || (p.until && sl.date > p.until)) return no('nicht im Zeitraum da');
       const st = avail[p.id]?.[sl.date]; if (st === 'no') return no('gesperrt');
       if (inShift(p, sl.s.id)) return no('schon in der Schicht');
       let dayH = 0, sameDay = 0;

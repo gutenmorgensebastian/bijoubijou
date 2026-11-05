@@ -86,6 +86,7 @@
     'Personalliste (Text)': 'Staff list (text)', 'Excel-Dienstplan (.xlsx)': 'Excel schedule (.xlsx)', 'Prüfen': 'Check', 'Name 20h/w Gewerke …': 'Name 20h/w trades …', 'Lese …': 'Reading …',
     'Hauptgewerke (bevorzugt; leer = alle gleich)': 'Main trades (preferred; empty = all equal)', 'Schichten fix (Planer teilt nicht ein)': 'Shifts fixed (planner does not schedule)', 'Teilzeit': 'Part-time', 'fix': 'fixed',
     'Der Planer teilt diese Person nicht ein': 'The planner does not schedule this person', 'Entweder-oder-Tage (MM-TT, mit Komma getrennt; wer an einem arbeitet, nicht an den anderen)': 'Either-or days (MM-DD, comma-separated; whoever works one does not work the others)',
+    'Verfügbar ab (leer = ganze Saison)': 'Available from (empty = whole season)', 'Verfügbar bis': 'Available until',
     'Freier Tag pro Woche': 'Day off per week', 'ja, wenn möglich': 'yes, if possible', 'Bitte erst eine Excel-Datei wählen': 'Please choose an Excel file first', 'Datei nicht lesbar': 'File not readable', 'übernommen': 'applied',
     // Rückfragen und Meldungen
     'Datum (JJJJ-MM-TT)': 'Date (YYYY-MM-DD)', 'Abendschicht? (Abbrechen = Tagschicht)': 'Evening shift? (Cancel = day shift)', 'Beginn (HH:MM)': 'Start (HH:MM)', 'Ende (HH:MM)': 'End (HH:MM)',
@@ -113,6 +114,7 @@
     [/^Zusammen lassen: (.+)\. (.*)$/, 'Keep together: $1. $2'], [/^ADL fix bis (.+)\. (.*)$/, 'ADL fixed until $1. $2'],
     [/^Paare zusammengehalten \(zweite Einlass-Person wechselt auf BA\): (\d+)\.$/, 'Pairs kept together (second admission person moves to stage assistant): $1.'],
     [/^Nicht zusammenzuhalten \(kein BA-Platz frei\): (\d+) \((.+)\)\.$/, 'Could not be kept together (no stage-assistant slot free): $1 ($2).'],
+    [/^Verfügbarkeit aus „Bewerber“: (.+)\. $/, 'Availability from “Bewerber”: $1. '], [/^ab (.+)$/, 'from $1'], [/^bis (.+)$/, 'until $1'],
     [/^Woche ab (.+)$/, 'Week from $1'], [/^(\d+) Tage$/, '$1 days'], [/^Übernommen\.$/, 'Applied.'], [/^Vorschau:$/, 'Preview:'], [/^Alle (.+)-Plätze sind belegt/, 'All $1 slots are taken'],
     [/^(\d+) Einteilungen vom Planer übernommen(.*)$/, '$1 assignments applied from the planner$2'],
     [/^(\d+) Plätze? offen$/, '$1 open slots'], [/^⚠ (\d+) über Budget$/, '⚠ $1 over budget'], [/^(\d+) fehlt$/, '$1 missing'], [/^(\d+) Vorst\. · (.+)$/, '$1 perf. · $2'],
