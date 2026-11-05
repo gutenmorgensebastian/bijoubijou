@@ -39,11 +39,13 @@ module.exports = (ctx) => {
     }
 
     // offene Plätze im Zeitraum
+    const adlFix = rules.adl_fixed_until || ''; // ADL bis einschließlich diesem Datum bleibt wie eingetragen
     const slots = [];
     for (const s of all('SELECT * FROM shifts WHERE date>=? AND date<=? ORDER BY date,start', from, to)) {
       const v = shiftView(s);
       for (const g of v.gewerke) {
         const [a, e] = gwWindow(s, g.gewerk); if (e <= a) continue;
+        if (g.gewerk.short === 'ADL' && adlFix && s.date <= adlFix) continue;
         for (let i = 0; i < g.missing; i++) slots.push({ s, g: g.gewerk, date: s.date, a: dayNum(s.date) * 1440 + a, e: dayNum(s.date) * 1440 + e, h: (e - a) / 60, taken: false });
       }
     }
@@ -76,7 +78,7 @@ module.exports = (ctx) => {
       const tier = p.gw.size === 1 ? 0 : 1, secondary = p.main.size && !p.main.has(sl.g.id);
       let streak = 0; for (let d = dayNum(sl.date) - 1; d > dayNum(sl.date) - 7; d--) { if (p.items.some(i => dayNum(i.date) === d)) streak++; else break; }
       const dw = (dayNum(sl.date) + 4) % 7, weekend = dw === 0 || dw === 6;
-      return tier * 50 + (secondary ? 30 : 0) + ((have + sl.h) / Math.max(1, limit)) * 40 + (st === 'maybe' ? 6 : 0) + (sameDay ? 15 : 0) + streak * 3 + (weekend ? p.wknd * 2 / Math.max(1, p.target / 10) : 0);
+      return tier * (sl.g.short === 'ADL' ? 50 : 12) + (secondary ? 30 : 0) + ((have + sl.h) / Math.max(1, limit)) * 40 + (st === 'maybe' ? 6 : 0) + (sameDay ? 15 : 0) + streak * 3 + (weekend ? p.wknd * 2 / Math.max(1, p.target / 10) : 0);
     }
     const pool = P.filter(plannable);
     for (const pass of [1, 2, 3]) {

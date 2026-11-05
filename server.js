@@ -220,7 +220,7 @@ function shiftView(s) {
 }
 
 // Einlesen (Textliste/Excel) und Dienstplan-Planer: eigene Dateien, bekommen die Datenbank-Helfer
-const importer = require('./importer.js')({ db, all, get, run, crypto, now, log, setting });
+const importer = require('./importer.js')({ db, all, get, run, crypto, now, log, setting, setSetting });
 const planner = require('./planer.js')({ all, get, run, setting, shiftView, gwWindow, log, now });
 
 // ---------- Stunden / Warnungen ----------

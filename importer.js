@@ -63,9 +63,23 @@ module.exports = (ctx) => {
     }
     return rows;
   }
+  // Regelzeilen: „Wenn A und B am gleichen Tag arbeiten, bitte so lassen.“ / „ADL im November ist fix.“
+  function parseRules(text) {
+    const together = [], rules = {};
+    for (const line of String(text || '').split(/\r?\n/)) {
+      const m = /wenn (.+?) am gleichen Tag arbeiten, bitte so lassen/i.exec(line);
+      if (m) together.push(m[1].split(/,| und /).map(x => x.trim()).filter(Boolean));
+      const a = /ADL im (\p{L}+) ist fix/iu.exec(line);
+      if (a) {
+        const mi = ['januar', 'februar', 'märz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'].indexOf(a[1].toLowerCase());
+        if (mi >= 0) { const season = ctx.setting('season'), y = mi + 1 >= 7 ? +season.start.slice(0, 4) : +season.end.slice(0, 4); rules.adl_fixed_until = new Date(Date.UTC(y, mi + 1, 0)).toISOString().slice(0, 10); }
+      }
+    }
+    return { together, rules };
+  }
   function importPeopleText(text, apply) {
     const gws = Object.fromEntries(all('SELECT id,short FROM gewerke WHERE active=1').map(g => [g.short.toUpperCase(), g.id]));
-    const rows = parsePeopleText(text), people = loadPeople(), out = { created: [], updated: [], rows: rows.length };
+    const rows = parsePeopleText(text), people = loadPeople(), pr = parseRules(text), out = { created: [], updated: [], rows: rows.length, together: pr.together, rules: pr.rules };
     if (apply) db.exec('BEGIN');
     try {
       for (const r of rows) {
@@ -83,7 +97,7 @@ module.exports = (ctx) => {
         if (apply) savePerson(p);
         (isNew ? out.created : out.updated).push({ name: p.name, week: r.week, plus: r.plus, cap: r.cap, fixed: r.fixed, gewerke: r.gw, main: r.main });
       }
-      if (apply) { db.exec('COMMIT'); log(null, 'import.people', `${out.created.length} neu, ${out.updated.length} aktualisiert`); }
+      if (apply) { if (pr.together.length) ctx.setSetting('keep_together', pr.together); if (Object.keys(pr.rules).length) ctx.setSetting('rules', { ...ctx.setting('rules'), ...pr.rules }); db.exec('COMMIT'); log(null, 'import.people', `${out.created.length} neu, ${out.updated.length} aktualisiert`); }
     } catch (e) { if (apply) db.exec('ROLLBACK'); throw e; }
     return out;
   }
@@ -95,7 +109,7 @@ module.exports = (ctx) => {
     const sheets = readXlsx(buf);
     const gwRows = all('SELECT * FROM gewerke WHERE active=1'), gws = Object.fromEntries(gwRows.map(g => [g.short.toUpperCase(), g]));
     const people = loadPeople();
-    const out = { people: { created: [], updated: [] }, blocks: 0, assignments: { added: 0, existing: 0, doppelt: 0 }, offen: 0, shiftsCreated: 0, unresolved: {}, blockedPeople: [], konflikte: [], einlassExtra: [] };
+    const out = { people: { created: [], updated: [] }, blocks: 0, assignments: { added: 0, existing: 0, doppelt: 0 }, offen: 0, shiftsCreated: 0, unresolved: {}, blockedPeople: [], konflikte: [], einlassExtra: [], paarErhalten: [], paarVerloren: [] };
     const miss = (n) => { out.unresolved[n] = (out.unresolved[n] || 0) + 1; };
     if (apply) db.exec('BEGIN');
     try {
@@ -127,7 +141,9 @@ module.exports = (ctx) => {
       // Schichtplan: Einteilungen je Position
       const cutoff = toMin(ctx.setting('rules').day_cutoff || '13:00');
       const taken = new Set(); // shift:person (auch in der Vorschau)
-      const eTaken = {}, needBy = {}, dates = []; // Besetzung je Schicht laut Schichtplan
+      const eTaken = {}, baTaken = {}, needBy = {}, dates = [];
+      const together = ctx.setting('keep_together', []).map(g => g.map(n => resolve(people, n, null)?.id).filter(Boolean)).filter(g => g.length > 1);
+      const togetherNames = (p) => { const ids = new Set(together.filter(g => g.includes(p.id)).flat()); return ids.size ? ids : null; }; // Besetzung je Schicht laut Schichtplan
       for (const [rn, row] of Object.entries(sheets.Schichtplan || {})) {
         if (+rn < 2 || typeof row.A !== 'number' || row.A < 40000) continue;
         const date = serialToDate(row.A); dates.push(date);
@@ -148,7 +164,7 @@ module.exports = (ctx) => {
         // Einlass ist immer nur mit einer Person besetzt (sie wechselt zwischen den Hütten): steht in der Tabelle für beide Hütten jemand,
         // wird eine Person übernommen (bevorzugt „Schichten fix“, sonst die erste), die andere nur gemeldet
         const fixedFirst = (e) => e.g === 'E' && String(e.nm ?? '').split(/[\/,]/).some(nm => resolve(people, nm.trim(), gws.E?.id)?.fixed) ? 0 : 1;
-        for (const e of [...ent].sort((a, b) => fixedFirst(a) - fixedFirst(b))) {
+        for (const e of [...ent].sort((a, b) => (a.g === 'E' ? 10 : 0) + fixedFirst(a) - (b.g === 'E' ? 10 : 0) - fixedFirst(b))) { // Einlass zuletzt, damit BA-Plätze schon bekannt sind
           const g = gws[e.g]; if (!g) continue;
           need[e.g] = (need[e.g] || 0) + 1;
           const names = String(e.nm ?? '').split(/[\/,]/).map(x => x.trim()).filter(x => x && x !== '?' && !/^technik$/i.test(x));
@@ -160,7 +176,18 @@ module.exports = (ctx) => {
             if (taken.has(key) || (best.id > 0 && get("SELECT 1 FROM assignments WHERE shift_id=? AND person_id=? AND status!='frei'", best.id, p.id))) { out.assignments[taken.has(key) ? 'doppelt' : 'existing']++; continue; }
             if (e.g === 'E') {
               const have = (best.id > 0 ? get("SELECT COUNT(*) c FROM assignments WHERE shift_id=? AND gewerk_id=? AND status!='frei'", best.id, g.id).c : 0) + (eTaken[best.id] || 0);
-              if (have >= 1) { out.einlassExtra.push({ name: p.name, date }); continue; }
+              if (have >= 1) {
+                // Gruppe „zusammen lassen“ (z. B. Helena/Finn): zweite Einlass-Person weicht auf einen freien BA-Platz aus, damit das Paar am Tag bleibt
+                const grp = togetherNames(p), mates = grp && ent.some(x => String(x.nm ?? '').split(/[\/,]/).some(n => { const q = resolve(people, n.trim(), null); return q && q.id !== p.id && grp.has(q.id); }));
+                const ba = gws.BA, baHave = (best.id > 0 ? get("SELECT COUNT(*) c FROM assignments WHERE shift_id=? AND gewerk_id=? AND status!='frei'", best.id, ba?.id).c : 0) + (baTaken[best.id] || 0);
+                if (mates && ba && p.gw.includes(ba.id) && baHave < 2) {
+                  baTaken[best.id] = (baTaken[best.id] || 0) + 1; out.paarErhalten.push({ name: p.name, date }); out.assignments.added++;
+                  if (apply) run("INSERT INTO assignments(shift_id,gewerk_id,person_id,status,created) VALUES(?,?,?,'fest',?)", best.id, ba.id, p.id, now());
+                  taken.add(key); continue;
+                }
+                if (mates) out.paarVerloren.push({ name: p.name, date });
+                out.einlassExtra.push({ name: p.name, date }); continue;
+              }
               eTaken[best.id] = (eTaken[best.id] || 0) + 1;
             }
             if (blocked.has(p.id + ':' + date)) out.konflikte.push({ name: p.name, date, gewerk: e.g });
