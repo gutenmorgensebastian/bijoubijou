@@ -187,7 +187,10 @@ module.exports = (ctx) => {
         const need = {};
         // Einlass ist immer nur mit einer Person besetzt (sie wechselt zwischen den Hütten): steht in der Tabelle für beide Hütten jemand,
         // wird eine Person übernommen (bevorzugt „Schichten fix“, sonst die erste), die andere nur gemeldet
-        const fixedFirst = (e) => e.g === 'E' && String(e.nm ?? '').split(/[\/,]/).some(nm => resolve(people, nm.trim(), gws.E?.id)?.fixed) ? 0 : 1;
+        const namesOf = (e) => String(e.nm ?? '').split(/[\/,]/).map(n => resolve(people, n.trim(), gws[e.g]?.id)).filter(Boolean);
+        const matesHere = (p) => { const grp = togetherNames(p); return !!grp && ent.some(x => namesOf(x).some(q => q.id !== p.id && grp.has(q.id))); };
+        // Reihenfolge der Einlass-Einträge: „Schichten fix“ zuerst, dann Personen, deren Gruppe an dem Tag zusammenbleiben soll, dann die übrigen
+        const fixedFirst = (e) => e.g !== 'E' ? 1 : namesOf(e).some(p => p.fixed) ? 0 : namesOf(e).some(matesHere) ? 1 : 2;
         for (const e of [...ent].sort((a, b) => (a.g === 'E' ? 10 : 0) + fixedFirst(a) - (b.g === 'E' ? 10 : 0) - fixedFirst(b))) { // Einlass zuletzt, damit BA-Plätze schon bekannt sind
           const g = gws[e.g]; if (!g) continue;
           need[e.g] = (need[e.g] || 0) + 1;
