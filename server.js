@@ -299,6 +299,12 @@ if (!get("SELECT 1 FROM settings WHERE key='zeitlogik_v3'")) {
   for (const [short, d, e, pk] of [['K', 1, 1, 1], ['E', 1, 1, 1], ['BA', 2, 2, 2], ['ADL', 1, 1, 1]]) run('UPDATE gewerke SET demand_day=?,demand_eve=?,demand_eve_peak=? WHERE short=?', d, e, pk, short);
   setSetting('zeitlogik_v3', true); setSetting('needs_generate', true);
 }
+// Einlass ist immer nur mit einer Person besetzt: Besetzung 1, wo nicht schon mehr Personen eingeteilt sind
+if (!get("SELECT 1 FROM settings WHERE key='einlass1'")) {
+  const e = get("SELECT id FROM gewerke WHERE short='E'");
+  if (e) run("UPDATE demand SET count=1 WHERE gewerk_id=? AND count>1 AND (SELECT COUNT(*) FROM assignments a WHERE a.shift_id=demand.shift_id AND a.gewerk_id=demand.gewerk_id AND a.status!='frei')<=1", e.id);
+  setSetting('einlass1', true);
+}
 if (setting('needs_generate')) { regenerateShifts(null); setSetting('needs_generate', false); }
 
 

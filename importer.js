@@ -95,7 +95,7 @@ module.exports = (ctx) => {
     const sheets = readXlsx(buf);
     const gwRows = all('SELECT * FROM gewerke WHERE active=1'), gws = Object.fromEntries(gwRows.map(g => [g.short.toUpperCase(), g]));
     const people = loadPeople();
-    const out = { people: { created: [], updated: [] }, blocks: 0, assignments: { added: 0, existing: 0, doppelt: 0 }, offen: 0, shiftsCreated: 0, unresolved: {}, blockedPeople: [], konflikte: [] };
+    const out = { people: { created: [], updated: [] }, blocks: 0, assignments: { added: 0, existing: 0, doppelt: 0 }, offen: 0, shiftsCreated: 0, unresolved: {}, blockedPeople: [], konflikte: [], einlassExtra: [] };
     const miss = (n) => { out.unresolved[n] = (out.unresolved[n] || 0) + 1; };
     if (apply) db.exec('BEGIN');
     try {
@@ -127,7 +127,7 @@ module.exports = (ctx) => {
       // Schichtplan: Einteilungen je Position
       const cutoff = toMin(ctx.setting('rules').day_cutoff || '13:00');
       const taken = new Set(); // shift:person (auch in der Vorschau)
-      const needBy = {}, dates = []; // Besetzung je Schicht laut Schichtplan
+      const eTaken = {}, needBy = {}, dates = []; // Besetzung je Schicht laut Schichtplan
       for (const [rn, row] of Object.entries(sheets.Schichtplan || {})) {
         if (+rn < 2 || typeof row.A !== 'number' || row.A < 40000) continue;
         const date = serialToDate(row.A); dates.push(date);
@@ -145,7 +145,10 @@ module.exports = (ctx) => {
           out.shiftsCreated++;
         }
         const need = {};
-        for (const e of ent) {
+        // Einlass ist immer nur mit einer Person besetzt (sie wechselt zwischen den Hütten): steht in der Tabelle für beide Hütten jemand,
+        // wird eine Person übernommen (bevorzugt „Schichten fix“, sonst die erste), die andere nur gemeldet
+        const fixedFirst = (e) => e.g === 'E' && String(e.nm ?? '').split(/[\/,]/).some(nm => resolve(people, nm.trim(), gws.E?.id)?.fixed) ? 0 : 1;
+        for (const e of [...ent].sort((a, b) => fixedFirst(a) - fixedFirst(b))) {
           const g = gws[e.g]; if (!g) continue;
           need[e.g] = (need[e.g] || 0) + 1;
           const names = String(e.nm ?? '').split(/[\/,]/).map(x => x.trim()).filter(x => x && x !== '?' && !/^technik$/i.test(x));
@@ -155,6 +158,11 @@ module.exports = (ctx) => {
             if (!p) { miss(nm); continue; }
             const key = best.id + ':' + p.id;
             if (taken.has(key) || (best.id > 0 && get("SELECT 1 FROM assignments WHERE shift_id=? AND person_id=? AND status!='frei'", best.id, p.id))) { out.assignments[taken.has(key) ? 'doppelt' : 'existing']++; continue; }
+            if (e.g === 'E') {
+              const have = (best.id > 0 ? get("SELECT COUNT(*) c FROM assignments WHERE shift_id=? AND gewerk_id=? AND status!='frei'", best.id, g.id).c : 0) + (eTaken[best.id] || 0);
+              if (have >= 1) { out.einlassExtra.push({ name: p.name, date }); continue; }
+              eTaken[best.id] = (eTaken[best.id] || 0) + 1;
+            }
             if (blocked.has(p.id + ':' + date)) out.konflikte.push({ name: p.name, date, gewerk: e.g });
             taken.add(key); out.assignments.added++;
             if (apply) run("INSERT INTO assignments(shift_id,gewerk_id,person_id,status,created) VALUES(?,?,?,'fest',?)", best.id, g.id, p.id, now());
