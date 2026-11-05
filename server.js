@@ -36,7 +36,9 @@ CREATE TABLE IF NOT EXISTS reports(shift_id INTEGER PRIMARY KEY, person_id INTEG
 CREATE TABLE IF NOT EXISTS log(id INTEGER PRIMARY KEY, ts TEXT, person_id INTEGER, action TEXT, detail TEXT);
 `);
 
-try { db.exec('ALTER TABLE gewerke ADD COLUMN end_after_last INTEGER'); } catch (e) { /* Spalte existiert schon */ }
+for (const sql of ['ALTER TABLE gewerke ADD COLUMN end_after_last INTEGER', "ALTER TABLE people ADD COLUMN fixed INTEGER DEFAULT 0", "ALTER TABLE people ADD COLUMN main_gewerke TEXT DEFAULT '[]'", "ALTER TABLE people ADD COLUMN aliases TEXT DEFAULT ''"]) {
+  try { db.exec(sql); } catch (e) { /* Spalte existiert schon */ }
+}
 const q = (sql) => db.prepare(sql);
 const all = (sql, ...p) => q(sql).all(...p);
 const get = (sql, ...p) => q(sql).get(...p);
@@ -217,6 +219,10 @@ function shiftView(s) {
   return { ...s, performances: perfs, gewerke: g, status: missing ? 'offen' : 'voll', missing, checks, report, todos, peak: isPeak(s.date), holiday: isHoliday(s.date) };
 }
 
+// Einlesen (Textliste/Excel) und Dienstplan-Planer: eigene Dateien, bekommen die Datenbank-Helfer
+const importer = require('./importer.js')({ db, all, get, run, crypto, now, log, setting });
+const planner = require('./planer.js')({ all, get, run, setting, shiftView, gwWindow, log, now });
+
 // ---------- Stunden / Warnungen ----------
 function personStats(pid, month) {
   const rows = all(`SELECT a.*,s.date,s.start,s.end,s.kind,g.rate,g.name gname,g.id gid,g.lead_min,g.end_after_last FROM assignments a JOIN shifts s ON s.id=a.shift_id JOIN gewerke g ON g.id=a.gewerk_id
@@ -355,7 +361,7 @@ const server = http.createServer(async (req, res) => {
 
       // --- Stammdaten ---
       if (p === '/api/bootstrap') {
-        const people = all('SELECT id,name,phone,email,role,employment,budget_month,budget_week,gewerke,notes,active FROM people ORDER BY name').map(x => ({ ...x, gewerke: JSON.parse(x.gewerke || '[]'), phone: admin || x.id === me.id ? x.phone : (x.phone ? x.phone : ''), email: admin || x.id === me.id ? x.email : '' }));
+        const people = all('SELECT id,name,phone,email,role,employment,budget_month,budget_week,gewerke,main_gewerke,fixed,aliases,notes,active FROM people ORDER BY name').map(x => ({ ...x, gewerke: JSON.parse(x.gewerke || '[]'), main_gewerke: JSON.parse(x.main_gewerke || '[]'), phone: admin || x.id === me.id ? x.phone : (x.phone ? x.phone : ''), email: admin || x.id === me.id ? x.email : '' }));
         return json(res, 200, { me: { ...me, pin: undefined, gewerke: JSON.parse(me.gewerke || '[]') }, people, gewerke: all('SELECT * FROM gewerke ORDER BY sort'), season: setting('season'), rules: setting('rules'), checklist: all('SELECT * FROM checklist ORDER BY gewerk_id,phase,sort') });
       }
 
@@ -458,11 +464,20 @@ const server = http.createServer(async (req, res) => {
       }
       if (p === '/api/availability') return json(res, 200, all('SELECT * FROM availability WHERE person_id=?', me.id));
 
+      // --- Einlesen (Textliste / Excel) und Dienstplan-Vorschlag ---
+      if (p === '/api/import/people' && req.method === 'POST' && need(admin)) { const r = importer.importPeopleText(String(body.text || ''), !!body.apply); if (body.apply) broadcast({ type: 'people' }); return json(res, 200, r); }
+      if (p === '/api/import/xlsx' && req.method === 'POST' && need(admin)) {
+        let r; try { r = importer.importXlsx(Buffer.from(String(body.file || ''), 'base64'), !!body.apply); } catch (e) { return json(res, 400, { error: e.message }); }
+        if (body.apply) { broadcast({ type: 'people' }); broadcast({ type: 'shifts' }); } return json(res, 200, r);
+      }
+      if (p === '/api/plan/propose' && req.method === 'POST' && need(admin)) return json(res, 200, planner.propose(body));
+      if (p === '/api/plan/apply' && req.method === 'POST' && need(admin)) { const r = planner.apply(body.proposals || [], me.id); broadcast({ type: 'shifts' }); return json(res, 200, r); }
+
       // --- Leute ---
       if (p === '/api/people' && req.method === 'POST' && need(admin)) {
         const pin = body.pin || String(Math.floor(1000 + Math.random() * 9000));
         if (get('SELECT 1 FROM people WHERE pin=?', pin)) return json(res, 400, { error: 'PIN schon vergeben' });
-        const r = run('INSERT INTO people(name,phone,email,pin,token,role,employment,budget_month,budget_week,gewerke,notes,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', body.name, body.phone || '', body.email || '', pin, crypto.randomBytes(12).toString('hex'), body.role || 'staff', body.employment || 'minijob', body.budget_month ?? 40, body.budget_week ?? 20, JSON.stringify(body.gewerke || []), body.notes || '', now());
+        const r = run('INSERT INTO people(name,phone,email,pin,token,role,employment,budget_month,budget_week,gewerke,main_gewerke,fixed,aliases,notes,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', body.name, body.phone || '', body.email || '', pin, crypto.randomBytes(12).toString('hex'), body.role || 'staff', body.employment || 'minijob', body.budget_month ?? 40, body.budget_week ?? 20, JSON.stringify(body.gewerke || []), JSON.stringify(body.main_gewerke || []), body.fixed ? 1 : 0, body.aliases || '', body.notes || '', now());
         log(me.id, 'person.create', body.name); broadcast({ type: 'people' }); return json(res, 200, { id: Number(r.lastInsertRowid), pin });
       }
       const mp = p.match(/^\/api\/people\/(\d+)$/);
@@ -476,7 +491,7 @@ const server = http.createServer(async (req, res) => {
             if (get('SELECT 1 FROM people WHERE pin=? AND id<>?', np, id)) return json(res, 400, { error: 'PIN schon vergeben' });
           }
           body.pin = np || undefined;
-          if (admin) run('UPDATE people SET name=?,phone=?,email=?,role=?,employment=?,budget_month=?,budget_week=?,gewerke=?,notes=?,active=?,pin=? WHERE id=?', body.name ?? pr.name, body.phone ?? pr.phone, body.email ?? pr.email, body.role ?? pr.role, body.employment ?? pr.employment, body.budget_month ?? pr.budget_month, body.budget_week ?? pr.budget_week, JSON.stringify(body.gewerke ?? JSON.parse(pr.gewerke || '[]')), body.notes ?? pr.notes, body.active ?? pr.active, body.pin ?? pr.pin, id);
+          if (admin) run('UPDATE people SET name=?,phone=?,email=?,role=?,employment=?,budget_month=?,budget_week=?,gewerke=?,main_gewerke=?,fixed=?,aliases=?,notes=?,active=?,pin=? WHERE id=?', body.name ?? pr.name, body.phone ?? pr.phone, body.email ?? pr.email, body.role ?? pr.role, body.employment ?? pr.employment, body.budget_month ?? pr.budget_month, body.budget_week ?? pr.budget_week, JSON.stringify(body.gewerke ?? JSON.parse(pr.gewerke || '[]')), JSON.stringify(body.main_gewerke ?? JSON.parse(pr.main_gewerke || '[]')), body.fixed != null ? (body.fixed ? 1 : 0) : pr.fixed, body.aliases ?? pr.aliases, body.notes ?? pr.notes, body.active ?? pr.active, body.pin ?? pr.pin, id);
           else if (id === me.id) run('UPDATE people SET phone=?,email=?,pin=? WHERE id=?', body.phone ?? pr.phone, body.email ?? pr.email, body.pin ?? pr.pin, id);
           else return json(res, 403, {});
           log(me.id, 'person.edit', pr.name); broadcast({ type: 'people' }); return json(res, 200, { ok: true });

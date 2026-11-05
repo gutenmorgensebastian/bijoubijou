@@ -45,6 +45,10 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 .pl-add{width:auto;max-width:100%;margin-top:4px;font-size:12px;padding:1px 4px}
 .pl-new{width:100%}
 @media print{.pl-del,.pl-rm,.pl-add,.pl-new{display:none!important}}
+/* Planer (pn-) und Einlesen (im-) */
+.pn-card{margin-top:10px}.pn-sum{margin:10px 0}.pn-t{font-size:13px;margin-top:6px}.pn-t td,.pn-t th{padding:2px 6px;text-align:right}.pn-t td:first-child,.pn-t th:first-child{text-align:left}
+.im-out{margin-top:6px;font-size:13px}.im-card textarea{width:100%}
+@media print{.pn-card{display:none}}
 /* Spielplan */
 .sp-week{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;overflow-x:auto;align-items:start}
 .sp-day{border:1px solid var(--line);border-radius:10px;padding:6px;min-width:0}.sp-day.today{background:var(--warnbg)}

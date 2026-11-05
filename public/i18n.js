@@ -76,6 +76,17 @@
     // Monate / Wochentage (einzeln)
     'Januar': 'January', 'Februar': 'February', 'März': 'March', 'Mai': 'May', 'Juni': 'June', 'Juli': 'July', 'Oktober': 'October', 'Dezember': 'December',
     'Mo': 'Mon', 'Di': 'Tue', 'Mi': 'Wed', 'Do': 'Thu', 'Fr': 'Fri', 'Sa': 'Sat', 'So': 'Sun',
+    // Planer, Einlesen, Personen
+    'Dienstplan vorschlagen': 'Suggest schedule', 'Offene Plätze nach Regeln verteilen (erst Vorschau)': 'Distribute open slots by the rules (preview first)',
+    'Verteilt nur offene Plätze (bestehende Einteilungen, Leute mit „Schichten fix“ und Leitung bleiben unverändert) nach Qualifikation, Sperrtagen, Wochenstunden, 6-h-Schichten, einem freien Tag pro Woche und „24.12./31.12. nur einer“. Erst Vorschau, dann „Übernehmen“.':
+      'Distributes open slots only (existing assignments, people with “fixed shifts” and management stay unchanged) by qualification, blocked days, weekly hours, 6-hour shifts, one day off per week and “24.12./31.12. only one”. Preview first, then “Apply”.',
+    'Von': 'From', 'Bis': 'To', 'Vorschlag berechnen': 'Calculate suggestion', 'Berechne …': 'Calculating …', 'Übernehmen': 'Apply', 'Verwerfen': 'Discard', 'Person': 'Person', 'Soll h/W': 'Target h/w', 'neu h': 'new h', 'gesamt h': 'total h',
+    'offenen Plätzen verteilt': 'open slots filled', 'offenen Plätzen verteilt,': 'open slots filled,', 'offenen Plätzen verteilt – alles besetzt': 'open slots filled – all staffed', ' – alles besetzt': ' – all staffed', 'Bleiben offen': 'Remain open', 'Warum': 'Why', 'Zeit': 'Time',
+    'Team und Dienstplan einlesen': 'Import team and schedule', 'Erst „Prüfen“ (zeigt nur, was passieren würde), dann „Übernehmen“. Namen bleiben in deiner lokalen Datenbank.': 'First “Check” (only shows what would happen), then “Apply”. Names stay in your local database.',
+    'Personalliste (Text)': 'Staff list (text)', 'Excel-Dienstplan (.xlsx)': 'Excel schedule (.xlsx)', 'Prüfen': 'Check', 'Name 20h/w Gewerke …': 'Name 20h/w trades …', 'Lese …': 'Reading …',
+    'Hauptgewerke (bevorzugt; leer = alle gleich)': 'Main trades (preferred; empty = all equal)', 'Schichten fix (Planer teilt nicht ein)': 'Shifts fixed (planner does not schedule)', 'Teilzeit': 'Part-time', 'fix': 'fixed',
+    'Der Planer teilt diese Person nicht ein': 'The planner does not schedule this person', 'Entweder-oder-Tage (MM-TT, mit Komma getrennt; wer an einem arbeitet, nicht an den anderen)': 'Either-or days (MM-DD, comma-separated; whoever works one does not work the others)',
+    'Freier Tag pro Woche': 'Day off per week', 'ja, wenn möglich': 'yes, if possible', 'Bitte erst eine Excel-Datei wählen': 'Please choose an Excel file first', 'Datei nicht lesbar': 'File not readable', 'übernommen': 'applied',
     // Rückfragen und Meldungen
     'Datum (JJJJ-MM-TT)': 'Date (YYYY-MM-DD)', 'Abendschicht? (Abbrechen = Tagschicht)': 'Evening shift? (Cancel = day shift)', 'Beginn (HH:MM)': 'Start (HH:MM)', 'Ende (HH:MM)': 'End (HH:MM)',
     'Name der Person (muss in „Leute“ angelegt sein):': 'Name of the person (must exist under “People”):', 'nicht gefunden': 'not found', 'Kurzer Grund / Hinweis für die anderen (optional):': 'Short reason / note for the others (optional):',
@@ -94,6 +105,10 @@
 
   // ---- Muster mit veränderlichen Teilen ($1 …); danach laufen noch die Wortersetzungen unten ----
   const PAT = [
+    [/^(\d+) von (\d+)$/, '$1 of $2'], [/^(\d+) bleiben offen$/, '$1 remain open'], [/^(\d+) Einteilungen übernommen(.*)$/, '$1 assignments applied$2'], [/^, (\d+) übersprungen$/, ', $1 skipped'],
+    [/^Übernommen: (\d+) neue Personen, (\d+) aktualisiert$/, 'Applied: $1 new people, $2 updated'], [/^Übernommen: (\d+) Einteilungen, (\d+) Sperrtage, (\d+) neue Personen$/, 'Applied: $1 assignments, $2 blocked days, $3 new people'],
+    [/^Woche ab (.+)$/, 'Week from $1'], [/^(\d+) Tage$/, '$1 days'], [/^Übernommen\.$/, 'Applied.'], [/^Vorschau:$/, 'Preview:'], [/^Alle (.+)-Plätze sind belegt/, 'All $1 slots are taken'],
+    [/^(\d+) Einteilungen vom Planer übernommen(.*)$/, '$1 assignments applied from the planner$2'],
     [/^(\d+) Plätze? offen$/, '$1 open slots'], [/^⚠ (\d+) über Budget$/, '⚠ $1 over budget'], [/^(\d+) fehlt$/, '$1 missing'], [/^(\d+) Vorst\. · (.+)$/, '$1 perf. · $2'],
     [/^Einen (.+)-Platz entfernen$/, 'Remove one $1 slot'], [/^(.+) \((\d+) → (\d+)\)$/, '$1 ($2 → $3)'], [/^(.+) (\d+)\/(\d+) frei$/, '$1 $2/$3 free'], [/^(.+) frei$/, '$1 free'],
     [/^Kommzeit (\S+) · bis (\S+) · (.+?) h(.*)$/, 'Arrival $1 · until $2 · $3 h$4'], [/^Kommzeit (\S+)(.*)$/, 'Arrival $1$2'], [/^\(Beginn (\S+)\)$/, '(start $1)'], [/^ ?\(Beginn (\S+)\)$/, ' (start $1)'],
