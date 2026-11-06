@@ -77,3 +77,8 @@ tr.ok td.h{background:var(--okbg)}tr.warn td.h{background:var(--warnbg)}tr.bad t
 
 u.bud-warn{text-decoration:underline wavy #ffd666;text-decoration-thickness:2px}u.bud-bad{text-decoration:underline wavy #ff8a80;text-decoration-thickness:2px;font-weight:700}
 .legend u.bud-warn{color:var(--warn)}.legend u.bud-bad{color:var(--bad)}
+
+/* offen (op-) */
+.op-day{border:1px solid var(--line);border-radius:10px;margin:8px 0;padding:0 10px}
+.op-day>summary{cursor:pointer;padding:8px 0;list-style:revert}.op-day>summary .pill{margin-left:6px}
+.op-day[open]>summary{border-bottom:1px solid var(--line)}

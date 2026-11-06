@@ -16,7 +16,7 @@ const fmtTs = (ts) => { const x = new Date(ts); return `${x.getDate()}.${x.getMo
 const today = () => { const x = new Date(); return x.toISOString().slice(0, 10); };
 const kindName = (k) => k === 'tag' ? 'Tagschicht' : 'Abendschicht';
 
-const S = { me: null, people: [], gewerke: [], season: null, rules: null, checklist: [], shifts: [], availability: [], view: 'plan', month: null, drawer: null, chat: 'allgemein', hoursMonth: null, filterGw: '' };
+const S = { me: null, people: [], gewerke: [], season: null, rules: null, checklist: [], shifts: [], availability: [], view: 'plan', month: null, drawer: null, chat: 'allgemein', hoursMonth: null, filterGw: '', openFolded: new Set() };
 const app = $('#app');
 const gw = (id) => S.gewerke.find(g => g.id === id) || { name: '?', color: '#888', short: '?' };
 const person = (id) => S.people.find(p => p.id === id);
@@ -210,10 +210,14 @@ function viewOpen(m) {
   }
   const mineOnly = !isAdmin() && myGw().length;
   const list = rows.filter(r => !mineOnly || myGw().includes(r.g.gewerk.id));
+  const byDay = {}; for (const r of list) (byDay[r.s.date] ||= []).push(r);
+  const days = Object.entries(byDay).sort(([a], [b]) => a.localeCompare(b));
   m.innerHTML = `<div class="card"><div class="row"><h2 style="margin:0">Offene Schichten</h2><select id="fgw" style="width:auto" class="right"><option value="">alle Gewerke</option>${S.gewerke.filter(g => g.active).map(g => `<option value="${g.id}" ${S.filterGw == g.id ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}</select></div>
     <p class="mute">${mineOnly ? 'Es werden nur Schichten deiner Gewerke gezeigt.' : ''} Gestrichelt = jemand hat die Schicht zum Tausch freigegeben.</p>
-    <table><tr><th>Datum</th><th>Schicht</th><th>Gewerk</th><th>Kommzeit</th><th></th></tr>${list.map(({ s, g, a }) => `<tr><td>${fmtD(s.date)}</td><td>${kindName(s.kind)} ${s.start}–${s.end}</td><td><span class="chip ${a ? 'frei' : ''}" style="background:${g.gewerk.color}">${esc(g.gewerk.name)}</span>${a?.note ? `<small class="mute"> ${esc(a.note)}</small>` : ''}</td><td>${a ? a.arrive_calc : '–'}</td><td><button class="small primary" data-s="${s.id}" data-g="${g.gewerk.id}" data-a="${a?.id || ''}">${a ? 'Übernehmen' : 'Ich mache das'}</button> <button class="small" data-open="${s.id}">Details</button></td></tr>`).join('') || '<tr><td colspan="5" class="mute">Nichts offen 🎉</td></tr>'}</table></div>`;
+    ${days.map(([d, items]) => `<details class="op-day" data-day="${d}" ${S.openFolded.has(d) ? '' : 'open'}><summary><b>${fmtD(d)}</b> <span class="pill">${items.length} offen</span></summary>
+      <table><tr><th>Schicht</th><th>Gewerk</th><th>Kommzeit</th><th></th></tr>${items.map(({ s, g, a }) => `<tr><td>${kindName(s.kind)} ${s.start}–${s.end}</td><td><span class="chip ${a ? 'frei' : ''}" style="background:${g.gewerk.color}">${esc(g.gewerk.name)}</span>${a?.note ? `<small class="mute"> ${esc(a.note)}</small>` : ''}</td><td>${a ? a.arrive_calc : '–'}</td><td><button class="small primary" data-s="${s.id}" data-g="${g.gewerk.id}" data-a="${a?.id || ''}">${a ? 'Übernehmen' : 'Ich mache das'}</button> <button class="small" data-open="${s.id}">Details</button></td></tr>`).join('')}</table></details>`).join('') || '<p class="mute">Nichts offen 🎉</p>'}</div>`;
   $('#fgw').onchange = (e) => { S.filterGw = e.target.value; renderView(); };
+  m.querySelectorAll('.op-day').forEach(d => d.ontoggle = () => { d.open ? S.openFolded.delete(d.dataset.day) : S.openFolded.add(d.dataset.day); });
   m.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openShift(Number(b.dataset.open)));
   m.querySelectorAll('[data-s]').forEach(b => b.onclick = async () => { try { const r = await api('/assign', { method: 'POST', body: { shift_id: Number(b.dataset.s), gewerk_id: Number(b.dataset.g), take_id: b.dataset.a ? Number(b.dataset.a) : undefined } }); toast(r.warnings?.length ? '⚠ ' + r.warnings.join(' · ') : 'Eingetragen', !!r.warnings?.length); } catch (e) { toast(e.message, true); } });
 }
