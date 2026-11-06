@@ -34,7 +34,9 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 .chip.frei{outline:2px dashed var(--warn);outline-offset:-1px;background:transparent!important;color:var(--warn)}
 .empty{color:var(--mute);font-size:12px;padding:10px;text-align:center}
 .avail-no{background:var(--badbg)}
-@media(max-width:720px){.day{grid-template-columns:70px 1fr}.day .shift:nth-child(3){grid-column:2}.hide-m{display:none}}
+/* Tag mit drei Schichten (Tag, Zwischen, Abend) */
+.day.day3{grid-template-columns:110px 1fr 1fr 1fr}
+@media(max-width:720px){.day.day3{grid-template-columns:70px 1fr}.day{grid-template-columns:70px 1fr}.day .shift:nth-child(3){grid-column:2}.hide-m{display:none}}
 /* Plan: Schichten und Arbeitsplätze bearbeiten (pl-) */
 .shift{position:relative}
 .pl-del{position:absolute;top:2px;right:2px;padding:0 6px;line-height:18px;font-size:12px;border-radius:6px;color:var(--bad)}
@@ -43,6 +45,10 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 .pl-add{width:auto;max-width:100%;margin-top:4px;font-size:12px;padding:1px 4px}
 .pl-new{width:100%}
 @media print{.pl-del,.pl-rm,.pl-add,.pl-new{display:none!important}}
+/* Planer (pn-) und Einlesen (im-) */
+.pn-card{margin-top:10px}.pn-sum{margin:10px 0}.pn-t{font-size:13px;margin-top:6px}.pn-t td,.pn-t th{padding:2px 6px;text-align:right}.pn-t td:first-child,.pn-t th:first-child{text-align:left}
+.im-out{margin-top:6px;font-size:13px}.im-card textarea{width:100%}
+@media print{.pn-card{display:none}}
 /* Spielplan */
 .sp-week{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;overflow-x:auto;align-items:start}
 .sp-day{border:1px solid var(--line);border-radius:10px;padding:6px;min-width:0}.sp-day.today{background:var(--warnbg)}

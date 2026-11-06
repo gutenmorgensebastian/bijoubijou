@@ -29,7 +29,7 @@ Zugang von außen wie bei Pratomat über Tailscale (oder Cloudflare Tunnel). Die
 
 ## Ablauf
 
-1. **Einstellungen** prüfen: Gewerke, Stundensätze, Vorlauf (Einlass −30, Kasse −60 / Übergabe −30, ADL −120 / Übergabe 0), Soll-Besetzung je Schicht, Spitzentage, Tauschmodus.
+1. **Einstellungen** prüfen: Gewerke, Stundensätze, Vorlauf (ADL −2:00, Einlass −1:00, BA −1:00, Kasse −1:15; Kasse endet 30 min nach dem letzten Stück), Soll-Besetzung je Schicht, Spitzentage, Tauschmodus.
 2. **Leute** anlegen: Name, Telefon, Gewerke, Beschäftigungsform, Stundenbudget. Jede Person bekommt eine PIN → Link + PIN per WhatsApp verschicken. Die App kann aufs Handy-Homescreen gelegt werden.
 3. Mitarbeitende tragen unter **Mein Plan** ihre Nicht-Verfügbarkeit ein und unter **Offen** sich selbst in freie Plätze ihrer Gewerke.
 4. Du teilst unter **Plan** per Klick auf eine Schicht ein (Person wählen). Namen mit gelber/roter Wellenlinie sind über 85 % bzw. über ihrem Monatsbudget oder der Minijob-Grenze.
@@ -46,17 +46,32 @@ Zugang von außen wie bei Pratomat über Tailscale (oder Cloudflare Tunnel). Die
 
 ## Regeln in der App
 
-- Tagschicht = Vorstellungen vor 13:00 Uhr, Abendschicht = ab 13:00 Uhr. Schichtbeginn = erste Vorstellung des Blocks, Ende = letzte Vorstellung + 90 min (einstellbar).
-- Kommzeit = Schichtbeginn − Vorlauf des Gewerks. „Übergabe“ gilt, wenn die Tagschicht desselben Tages im selben Gewerk besetzt ist und noch läuft, wenn der normale Vorlauf beginnen würde.
-- Stunden = Kommzeit bis Schichtende (oder eingetragene Ist-Zeiten). Betrag = Stunden × Stundensatz des Gewerks.
+- Arbeitstag je Tag aus dem Spielplan: erstes Stück = frühester Beginn, letztes Stück = spätester Beginn. Beginn = erstes Stück − größter Vorlauf (ADL, 2:00 h), Ende = letztes Stück + Nachlauf (Standard 105 min, mindestens 90 min).
+- Feste Vorläufe vor dem ersten Stück: ADL 2:00 h, Einlass 1:00 h, BA 1:00 h, Kasse 1:15 h. Die Kasse endet 30 Minuten nach Beginn des letzten Stücks (Spalte „Ende nach letztem Stück“ je Gewerk, leer = Ende des Arbeitstags). Alles in den Einstellungen änderbar.
+- Dauert der Arbeitstag mehr als 360 min (Einstellung), wird er geteilt (Tagschicht = erster Teil, Abendschicht = zweiter). Einstellung „Arbeitstag teilen“: *in zwei gleich lange Hälften* (Standard), *an einer langen Pause zwischen den Stücken* (ab 180 min zwischen zwei Stückbeginnen; jeder Block bekommt eigenen Beginn/Ende und eigene Vorläufe, sonst Hälften) oder *nie teilen*. Änderungen gelten sofort für alle nicht von Hand geänderten Schichten; einzelne Tage lassen sich unter „Zeiten/Besetzung“ von Hand anpassen. Gewerke, die in einer Schichthälfte nicht gebraucht werden, bekommen dort Soll 0. Kommzeit/Ende jedes Gewerks werden auf die Schicht zugeschnitten.
+- Stunden = Kommzeit bis Ende des Gewerks in der Schicht (oder eingetragene Ist-Zeiten). Betrag = Stunden × Stundensatz des Gewerks.
 - Warnungen: Minijob-Grenze (603 € in 2026, 633 € ab 2027), Monatsbudget, mehr als 10 h an einem Tag. Sonn- und Feiertage werden in der Stundenliste markiert.
 - Werkstudent:innen: Budget pro Woche in den Stammdaten pflegen (20 h in der Vorlesungszeit).
+
+## Team einlesen und Dienstplan vorschlagen
+
+- **Einstellungen → „Team und Dienstplan einlesen“:** Personalliste als Text (Zeilen wie `Max Muster 25h/w ADL`, `Erika Beispiel 25h/w vorwiegend Kasse/BA`, `Tom Probe, Schichten sind fix`, `Lea Muster, kann noch 30h im Dezember. BA/Kasse`) und/oder die Excel-Datei (Blätter *Notizen* = Personal und Gewerke, *SPERRER* = gesperrte Tage, *Schichtplan* = Einteilung je Position; „?“ und leere Namen = offener Platz). Immer erst „Prüfen“, dann „Übernehmen“. Namen landen nur in der lokalen Datenbank (`data/`), nicht in Git.
+- **Plan → „Dienstplan vorschlagen“:** verteilt nur offene Plätze im gewählten Zeitraum und zeigt vorher Stunden je Person und Woche. Berücksichtigt Gewerke (Hauptgewerke zuerst, Spezialisten vor Allroundern), Sperrtage, Wochenstunden im Verhältnis zum Soll (Budget h/Woche) und Monatsbudget, Schichten höchstens 6 h, Ruhezeit 11 h, einen freien Tag pro Woche, „24.12./31.12. nur einer“ (einstellbar unter Regeln). Leute mit „Schichten fix“ und Leitung werden nie eingeteilt, bestehende Einteilungen nie verändert. Bei „Schichten fix“ besteht das Stundenkontingent genau aus den eingetragenen Schichten (aus der Excel): kein Budget, keine Budget-Warnung, die Stundenliste zeigt die Summe dieser Schichten. Gesperrte Tage (SPERRER) beachtet der Planer immer; liegt in der Excel selbst eine Einteilung auf einem gesperrten Tag, weist die Vorschau beim Einlesen darauf hin. Erst „Übernehmen“ schreibt in den Plan.
+- Regelzeilen in der Personalliste werden erkannt: „Wenn Helena und Finn am gleichen Tag arbeiten, bitte so lassen.“ (Gruppen bleiben am Tag zusammen: wird ein zweiter Einlass nötig, wechselt die Person auf einen freien BA-Platz) und „ADL im November ist fix.“ (der Planer ändert ADL bis Monatsende nicht; auch unter Regeln einstellbar).
+- Verfügbarkeitszeitraum je Person („Verfügbar ab/bis“ im Tab Leute): wird aus der Personalliste („ab Dezember“, „nur im Dezember“, „kann noch 30h im Dezember“) und aus dem Excel-Blatt *Bewerber* (Spalte Verfügbarkeit, z. B. „ab Dezember“, „ab 13.11.“) übernommen; außerhalb dieses Zeitraums plant der Planer die Person nie ein.
+- Besetzung je Schicht nach Standard: Kasse 1, Einlass 1 (die Person wechselt zwischen den Hütten), BA 2, ADL 1. Einlass ist immer nur mit einer Person besetzt: steht in der Excel für Wilhelm und Jakob je jemand, übernimmt der Import nur eine Person (bevorzugt „Schichten fix“, sonst die erste); die zweite wird in der Vorschau gemeldet. Bestehende Daten werden einmalig auf Einlass 1 gestellt, wo nicht schon mehr Personen eingeteilt sind.
+
+## Sprache
+
+- Oben rechts schaltet „DE | EN“ die Oberfläche zwischen Deutsch und Englisch um (wird im Browser gemerkt). Die Übersetzung steht in `public/i18n.js`; neue deutsche Texte erscheinen in der englischen Ansicht deutsch, bis sie dort ergänzt werden. Namen, Titel und Chat-Nachrichten werden nie übersetzt.
 
 ## Dateien
 
 ```
 server.js                 Server + API (Node, SQLite eingebaut)
-public/                   Oberfläche (index.html, app.js, style.css)
+importer.js, xlsx.js      Einlesen von Personalliste und Excel-Dienstplan
+planer.js                 Dienstplan-Vorschlag
+public/                   Oberfläche (index.html, app.js, i18n.js, style.css)
 data/spielplan-seed.json  Spielplan für den ersten Start
 data/huettenplan.sqlite   alle Daten (wird beim Start angelegt)
 de.huettenplan.plist      launchd-Vorlage für den Mac Mini

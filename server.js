@@ -36,10 +36,14 @@ CREATE TABLE IF NOT EXISTS reports(shift_id INTEGER PRIMARY KEY, person_id INTEG
 CREATE TABLE IF NOT EXISTS log(id INTEGER PRIMARY KEY, ts TEXT, person_id INTEGER, action TEXT, detail TEXT);
 `);
 
+for (const sql of ['ALTER TABLE gewerke ADD COLUMN end_after_last INTEGER', "ALTER TABLE people ADD COLUMN fixed INTEGER DEFAULT 0", "ALTER TABLE people ADD COLUMN main_gewerke TEXT DEFAULT '[]'", "ALTER TABLE people ADD COLUMN aliases TEXT DEFAULT ''", "ALTER TABLE people ADD COLUMN available_from TEXT DEFAULT ''", "ALTER TABLE people ADD COLUMN available_until TEXT DEFAULT ''"]) {
+  try { db.exec(sql); } catch (e) { /* Spalte existiert schon */ }
+}
 const q = (sql) => db.prepare(sql);
 const all = (sql, ...p) => q(sql).all(...p);
 const get = (sql, ...p) => q(sql).get(...p);
-const run = (sql, ...p) => q(sql).run(...p);
+const planCache = new Map(); // Arbeitstage je Datum; wird bei Änderungen an Spielplan, Gewerken und Regeln geleert
+const run = (sql, ...p) => { if (/performances|gewerke|settings/i.test(sql)) planCache.clear(); return q(sql).run(...p); };
 const now = () => new Date().toISOString();
 const setting = (k, d) => { const r = get('SELECT value FROM settings WHERE key=?', k); return r ? JSON.parse(r.value) : d; };
 const setSetting = (k, v) => run('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', k, JSON.stringify(v));
@@ -50,13 +54,13 @@ const log = (pid, action, detail) => { run('INSERT INTO log(ts,person_id,action,
 // ---------- Seed ----------
 if (!get('SELECT 1 FROM settings WHERE key=?', 'seeded')) {
   setSetting('season', { start: '2026-11-13', end: '2027-01-31', name: 'Märchenhütten Winter 2026/27' });
-  setSetting('rules', { day_cutoff: '13:00', after_min: 90, minijob_2026: 603, minijob_2027: 633, max_day_h: 10, rest_h: 11, peak_days: [5, 6, 0], peak_from: '2026-12-01', peak_to: '2026-12-31', swap_mode: 'direct' });
+  setSetting('rules', { day_cutoff: '13:00', after_min: 105, after_min_floor: 90, split_min: 360, max_shift_min: 360, split_mode: 'half', pause_min: 180, minijob_2026: 603, minijob_2027: 633, max_day_h: 10, rest_h: 11, peak_days: [5, 6, 0], peak_from: '2026-12-01', peak_to: '2026-12-31', swap_mode: 'direct' });
   setSetting('admin_pin', '1234');
   const gw = [
-    ['Kasse', 'K', 15, 60, 30, 1, 1, 2, '#2f6fde'],
-    ['Einlass', 'E', 15, 30, 30, 1, 2, 3, '#1f9d55'],
-    ['Bühnenassistenz', 'BA', 16, 60, 30, 0, 1, 2, '#b7791f'],
-    ['Abenddienstleitung', 'ADL', 18, 120, 0, 0, 1, 1, '#c53030'],
+    ['Kasse', 'K', 15, 75, 0, 1, 1, 1, '#2f6fde'],
+    ['Einlass', 'E', 15, 60, 0, 1, 1, 1, '#1f9d55'],
+    ['Bühnenassistenz', 'BA', 16, 60, 0, 2, 2, 2, '#b7791f'],
+    ['Abenddienstleitung', 'ADL', 18, 90, 0, 1, 1, 1, '#c53030'],
   ];
   gw.forEach((g, i) => run('INSERT INTO gewerke(name,short,rate,lead_min,lead_handover_min,demand_day,demand_eve,demand_eve_peak,color,sort) VALUES(?,?,?,?,?,?,?,?,?,?)', ...g, i));
   const cl = {
@@ -93,46 +97,106 @@ const dow = (d) => new Date(d + 'T12:00:00Z').getUTCDay();
 const isPeak = (date) => { const r = setting('rules'); return date >= r.peak_from && date <= r.peak_to && r.peak_days.includes(dow(date)); };
 const isHoliday = (d) => ['2026-12-25', '2026-12-26', '2027-01-01'].includes(d) || dow(d) === 0;
 
+// Arbeitstag eines Tages aus dem Spielplan: erstes/letztes Stück (frühester/spätester Beginn), Arbeitsbeginn und -ende (Minuten,
+// das Ende kann über 1440 liegen) und die Aufteilung in Schichten (day.parts, je Teil kind/s/e/ref). Regel split_mode:
+//   'half'  Arbeitstag länger als split_min → gleich lange Schichten (Mitte, auf 5 min gerundet)
+//   'pause' gibt es zwischen zwei Stücken eine Pause von mindestens pause_min (und ohne Überschneidung der Arbeitszeiten),
+//           bekommt jeder Block eine eigene Schicht mit eigenem Beginn/Ende; sonst wie 'half'
+//   'off'   nie teilen
+// Zusätzlich gilt max_shift_min (Standard 360): ist eine Schicht länger, wird sie weiter in gleich lange Teile geteilt
+// (höchstens 3 Schichten pro Tag: tag, mitte, abend); nur bei „nie teilen“ bleibt es bei einer Schicht.
+function dayPlan(date) {
+  if (planCache.has(date)) return planCache.get(date);
+  const day = computeDayPlan(date); planCache.set(date, day); return day;
+}
+function computeDayPlan(date) {
+  const rules = setting('rules');
+  const ps = all('SELECT time FROM performances WHERE date=? ORDER BY time', date).map(p => toMin(p.time));
+  if (!ps.length) return null;
+  const lead = Math.max(0, ...all('SELECT lead_min FROM gewerke WHERE active=1').map(g => g.lead_min || 0));
+  const after = Math.max(rules.after_min ?? 105, rules.after_min_floor ?? 0);
+  const mk = (a) => ({ first: a[0], last: a[a.length - 1], start: a[0] - lead, end: a[a.length - 1] + after });
+  const day = mk(ps); day.total = day.end - day.start;
+  const mode = rules.split_mode || 'half', maxLen = rules.max_shift_min || 0;
+  const cut = (s, e, n, ref) => Array.from({ length: n }, (_, i) => ({ s: i ? s + Math.round((e - s) * i / n / 5) * 5 : s, e: i === n - 1 ? e : s + Math.round((e - s) * (i + 1) / n / 5) * 5, ref }));
+  let parts = null;
+  if (mode === 'pause') {
+    let gi = -1, gap = 0;
+    for (let i = 1; i < ps.length; i++) if (ps[i] - ps[i - 1] > gap) { gap = ps[i] - ps[i - 1]; gi = i; }
+    if (gi > 0 && gap >= (rules.pause_min ?? 180)) {
+      const b = [mk(ps.slice(0, gi)), mk(ps.slice(gi))];
+      if (b[0].end < b[1].start) {
+        parts = b.map(x => ({ s: x.start, e: x.end, ref: x }));
+        if (maxLen) { // längsten Block weiter teilen, solange es höchstens 3 Schichten bleiben
+          const i = parts[0].e - parts[0].s >= parts[1].e - parts[1].s ? 0 : 1, p = parts[i];
+          if (p.e - p.s > maxLen && Math.ceil((p.e - p.s) / maxLen) === 2) parts.splice(i, 1, ...cut(p.s, p.e, 2, p.ref));
+        }
+      }
+    }
+  }
+  if (!parts) {
+    let n = 1;
+    if (mode !== 'off') {
+      if (day.total > (rules.split_min ?? 360)) n = 2;
+      if (maxLen) n = Math.max(n, Math.ceil(day.total / maxLen));
+    }
+    parts = cut(day.start, day.end, Math.min(n, 3), day);
+  }
+  const kinds = parts.length === 1 ? [day.first < toMin(rules.day_cutoff) ? 'tag' : 'abend'] : parts.length === 2 ? ['tag', 'abend'] : ['tag', 'mitte', 'abend'];
+  day.parts = parts.map((x, i) => ({ ...x, kind: kinds[i] }));
+  day.split = day.parts.length > 1; day.mode = mode;
+  return day;
+}
+// Arbeitsfenster eines Gewerks innerhalb einer Schicht (absolute Minuten): Beginn = erstes Stück − Vorlauf, Ende = Kassenregel
+// (letztes Stück + Minuten) oder Ende des Arbeitstags; beides auf die Schicht zugeschnitten. Bei Teilung an der Pause gilt
+// „erstes/letztes Stück“ für den Block der Schicht.
+function shiftWin(shift) { const s = toMin(shift.start); let e = toMin(shift.end); if (e <= s) e += 1440; return [s, e]; }
+function gwWindow(shift, gw) {
+  const [ss, se] = shiftWin(shift), dp = dayPlan(shift.date);
+  if (!dp) return [ss - (gw.lead_min || 0), se]; // von Hand angelegte Schicht ohne Vorstellungen: Beginn der Schicht = erstes Stück
+  const ref = dp.parts.find(x => x.kind === shift.kind)?.ref || dp;
+  const gs = ref.first - (gw.lead_min || 0), ge = gw.end_after_last != null ? ref.last + gw.end_after_last : ref.end;
+  return [Math.max(ss, gs), Math.min(se, ge)];
+}
+
 function regenerateShifts(pid) {
   const rules = setting('rules');
-  const cutoff = toMin(rules.day_cutoff);
   const dates = all('SELECT DISTINCT date FROM performances ORDER BY date');
   const gws = all('SELECT * FROM gewerke WHERE active=1');
   let created = 0;
   for (const { date } of dates) {
-    const perfs = all('SELECT time FROM performances WHERE date=? ORDER BY time', date).map(p => toMin(p.time));
-    const blocks = { tag: perfs.filter(m => m < cutoff), abend: perfs.filter(m => m >= cutoff) };
-    for (const kind of ['tag', 'abend']) {
-      const ps = blocks[kind];
-      if (!ps.length) continue;
-      const start = toT(ps[0]), end = toT(ps[ps.length - 1] + rules.after_min);
-      const ex = get('SELECT * FROM shifts WHERE date=? AND kind=?', date, kind);
+    const dp = dayPlan(date);
+    const want = dp.parts;
+    for (const w of want) {
+      const start = toT(w.s), end = toT(w.e);
+      const ex = get('SELECT * FROM shifts WHERE date=? AND kind=?', date, w.kind);
       if (ex) { if (!ex.manual) run('UPDATE shifts SET start=?,end=? WHERE id=?', start, end, ex.id); continue; }
-      const r = run('INSERT INTO shifts(date,kind,start,end) VALUES(?,?,?,?)', date, kind, start, end);
+      const r = run('INSERT INTO shifts(date,kind,start,end) VALUES(?,?,?,?)', date, w.kind, start, end);
       const sid = Number(r.lastInsertRowid); created++;
       for (const g of gws) {
-        const c = kind === 'tag' ? g.demand_day : (isPeak(date) ? g.demand_eve_peak : g.demand_eve);
+        const [a, e] = gwWindow({ date, kind: w.kind, start, end }, g);
+        const c = e <= a ? 0 : w.kind === 'tag' ? g.demand_day : (isPeak(date) ? g.demand_eve_peak : g.demand_eve);
         run('INSERT INTO demand(shift_id,gewerk_id,count) VALUES(?,?,?)', sid, g.id, c);
       }
+    }
+    // nicht mehr benötigte, nicht von Hand angelegte Schicht ohne Einteilung entfernen (z. B. Tag zusammengefasst)
+    for (const s of all('SELECT * FROM shifts WHERE date=? AND manual=0', date)) {
+      if (want.some(w => w.kind === s.kind) || get('SELECT 1 FROM assignments WHERE shift_id=?', s.id)) continue;
+      run('DELETE FROM demand WHERE shift_id=?', s.id); run('DELETE FROM shifts WHERE id=?', s.id);
     }
   }
   if (created) log(pid, 'shifts.generate', `${created} Schichten angelegt`);
   return created;
 }
 
-// Antrittszeit: Übergabe, wenn in der Tagschicht desselben Tages dasselbe Gewerk besetzt ist
+// Kommzeit/Ende je Gewerk (feste Vorlaufzeiten, Kassenende, Arbeitstagende), Ist-Zeiten gehen vor
 function arrival(shift, gw, asg) {
   if (asg && asg.arrive) return asg.arrive;
-  let handover = false;
-  if (shift.kind === 'abend') {
-    // Übergabe nur, wenn die Tagschicht noch läuft, wenn der normale Vorlauf beginnen würde
-    const tag = get('SELECT id,end FROM shifts WHERE date=? AND kind=?', shift.date, 'tag');
-    if (tag && toMin(tag.end) >= toMin(shift.start) - gw.lead_min) handover = !!get("SELECT 1 FROM assignments WHERE shift_id=? AND gewerk_id=? AND status!='frei' AND person_id IS NOT NULL", tag.id, gw.id);
-  }
-  return toT(toMin(shift.start) - (handover ? gw.lead_handover_min : gw.lead_min));
+  return toT(gwWindow(shift, gw)[0]);
 }
+function endOf(shift, gw) { return toT(gwWindow(shift, gw)[1]); }
 function hoursOf(shift, gw, asg) {
-  const a = asg.actual_start || arrival(shift, gw, asg), e = asg.actual_end || shift.end;
+  const a = asg.actual_start || arrival(shift, gw, asg), e = asg.actual_end || endOf(shift, gw);
   let m = toMin(e) - toMin(a); if (m < 0) m += 1440; return Math.round(m / 6) / 10;
 }
 
@@ -140,10 +204,10 @@ function shiftView(s) {
   const gws = all('SELECT * FROM gewerke WHERE active=1 ORDER BY sort');
   const dem = Object.fromEntries(all('SELECT gewerk_id,count FROM demand WHERE shift_id=?', s.id).map(d => [d.gewerk_id, d.count]));
   const asgs = all('SELECT a.*,p.name person_name FROM assignments a LEFT JOIN people p ON p.id=a.person_id WHERE shift_id=? ORDER BY a.id', s.id);
-  const cut = setting('rules').day_cutoff;
-  const perfs = all(s.kind === 'tag' ? 'SELECT time,title,audience FROM performances WHERE date=? AND time<? ORDER BY time' : 'SELECT time,title,audience FROM performances WHERE date=? AND time>=? ORDER BY time', s.date, cut);
+  const [ws, we] = shiftWin(s);
+  const perfs = all('SELECT time,title,audience FROM performances WHERE date=? ORDER BY time', s.date).filter(p => { const m = toMin(p.time); return m >= ws && m < we; });
   const g = gws.map(gw => {
-    const a = asgs.filter(x => x.gewerk_id === gw.id).map(x => ({ ...x, arrive_calc: arrival(s, gw, x), hours: hoursOf(s, gw, x) }));
+    const a = asgs.filter(x => x.gewerk_id === gw.id).map(x => ({ ...x, arrive_calc: arrival(s, gw, x), end_calc: endOf(s, gw), hours: hoursOf(s, gw, x) }));
     const filled = a.filter(x => x.status !== 'frei' && x.person_id).length;
     const open = a.filter(x => x.status === 'frei').length;
     return { gewerk: gw, demand: dem[gw.id] ?? 0, assignments: a, filled, open, missing: Math.max(0, (dem[gw.id] ?? 0) - filled - open) };
@@ -155,15 +219,19 @@ function shiftView(s) {
   return { ...s, performances: perfs, gewerke: g, status: missing ? 'offen' : 'voll', missing, checks, report, todos, peak: isPeak(s.date), holiday: isHoliday(s.date) };
 }
 
+// Einlesen (Textliste/Excel) und Dienstplan-Planer: eigene Dateien, bekommen die Datenbank-Helfer
+const importer = require('./importer.js')({ db, all, get, run, crypto, now, log, setting, setSetting });
+const planner = require('./planer.js')({ all, get, run, setting, shiftView, gwWindow, log, now });
+
 // ---------- Stunden / Warnungen ----------
 function personStats(pid, month) {
-  const rows = all(`SELECT a.*,s.date,s.start,s.end,s.kind,g.rate,g.name gname,g.id gid,g.lead_min,g.lead_handover_min FROM assignments a JOIN shifts s ON s.id=a.shift_id JOIN gewerke g ON g.id=a.gewerk_id
+  const rows = all(`SELECT a.*,s.date,s.start,s.end,s.kind,g.rate,g.name gname,g.id gid,g.lead_min,g.end_after_last FROM assignments a JOIN shifts s ON s.id=a.shift_id JOIN gewerke g ON g.id=a.gewerk_id
     WHERE a.person_id=? AND a.status!='frei' ${month ? 'AND substr(s.date,1,7)=?' : ''} ORDER BY s.date,s.start`, ...(month ? [pid, month] : [pid]));
   let hours = 0, pay = 0; const days = {};
   const lines = rows.map(r => {
-    const s = { id: r.shift_id, date: r.date, start: r.start, end: r.end, kind: r.kind }, gw = { id: r.gid, lead_min: r.lead_min, lead_handover_min: r.lead_handover_min };
+    const s = { id: r.shift_id, date: r.date, start: r.start, end: r.end, kind: r.kind }, gw = { id: r.gid, lead_min: r.lead_min, end_after_last: r.end_after_last };
     const h = hoursOf(s, gw, r); hours += h; pay += h * r.rate; days[r.date] = (days[r.date] || 0) + h;
-    return { date: r.date, kind: r.kind, gewerk: r.gname, arrive: arrival(s, gw, r), end: r.actual_end || r.end, hours: h, rate: r.rate, pay: Math.round(h * r.rate * 100) / 100, holiday: isHoliday(r.date) };
+    return { date: r.date, kind: r.kind, gewerk: r.gname, arrive: arrival(s, gw, r), end: r.actual_end || endOf(s, gw), hours: h, rate: r.rate, pay: Math.round(h * r.rate * 100) / 100, holiday: isHoliday(r.date) };
   });
   const rules = setting('rules');
   const warnings = [];
@@ -171,7 +239,7 @@ function personStats(pid, month) {
   if (p && month) {
     const limit = month.startsWith('2027') ? rules.minijob_2027 : rules.minijob_2026;
     if (p.employment === 'minijob' && pay > limit) warnings.push(`Minijob-Grenze ${limit} € überschritten (${pay.toFixed(0)} €)`);
-    if (hours > p.budget_month) warnings.push(`Monatsbudget ${p.budget_month} h überschritten (${hours.toFixed(1)} h)`);
+    if (!p.fixed && hours > p.budget_month) warnings.push(`Monatsbudget ${p.budget_month} h überschritten (${hours.toFixed(1)} h)`);
     Object.entries(days).filter(([, h]) => h > rules.max_day_h).forEach(([d, h]) => warnings.push(`${d}: ${h.toFixed(1)} h am Tag (max. ${rules.max_day_h})`));
   }
   return { hours: Math.round(hours * 10) / 10, pay: Math.round(pay * 100) / 100, lines, warnings };
@@ -218,6 +286,25 @@ async function importSpielplan(pid) {
   return { ok: true, read: found.length, added, shifts: created };
 }
 
+// Einmalige Umstellung auf die feste Zeitlogik (Vorläufe, Kassenende, Nachlauf, Schichtteilung)
+if (!get("SELECT 1 FROM settings WHERE key='zeitlogik_v2'")) {
+  setSetting('rules', { ...setting('rules'), after_min: 105, after_min_floor: 90, split_min: 360 });
+  for (const [short, lead, endAfter] of [['K', 75, 30], ['E', 60, null], ['BA', 60, null], ['ADL', 120, null]]) run('UPDATE gewerke SET lead_min=?,end_after_last=? WHERE short=?', lead, endAfter, short);
+  setSetting('zeitlogik_v2', true); setSetting('needs_generate', true);
+}
+// Einmalige Umstellung: ADL 90 min Vorlauf, Besetzung Kasse 1 / Einlass 1 (eine Person für beide Hütten) / BA 2 / ADL 1, Schichten höchstens 6 h
+if (!get("SELECT 1 FROM settings WHERE key='zeitlogik_v3'")) {
+  setSetting('rules', { ...setting('rules'), max_shift_min: 360 });
+  run("UPDATE gewerke SET lead_min=90 WHERE short='ADL' AND lead_min=120");
+  for (const [short, d, e, pk] of [['K', 1, 1, 1], ['E', 1, 1, 1], ['BA', 2, 2, 2], ['ADL', 1, 1, 1]]) run('UPDATE gewerke SET demand_day=?,demand_eve=?,demand_eve_peak=? WHERE short=?', d, e, pk, short);
+  setSetting('zeitlogik_v3', true); setSetting('needs_generate', true);
+}
+// Einlass ist immer nur mit einer Person besetzt: Besetzung 1, wo nicht schon mehr Personen eingeteilt sind
+if (!get("SELECT 1 FROM settings WHERE key='einlass1'")) {
+  const e = get("SELECT id FROM gewerke WHERE short='E'");
+  if (e) run("UPDATE demand SET count=1 WHERE gewerk_id=? AND count>1 AND (SELECT COUNT(*) FROM assignments a WHERE a.shift_id=demand.shift_id AND a.gewerk_id=demand.gewerk_id AND a.status!='frei')<=1", e.id);
+  setSetting('einlass1', true);
+}
 if (setting('needs_generate')) { regenerateShifts(null); setSetting('needs_generate', false); }
 
 
@@ -280,7 +367,7 @@ const server = http.createServer(async (req, res) => {
 
       // --- Stammdaten ---
       if (p === '/api/bootstrap') {
-        const people = all('SELECT id,name,phone,email,role,employment,budget_month,budget_week,gewerke,notes,active FROM people ORDER BY name').map(x => ({ ...x, gewerke: JSON.parse(x.gewerke || '[]'), phone: admin || x.id === me.id ? x.phone : (x.phone ? x.phone : ''), email: admin || x.id === me.id ? x.email : '' }));
+        const people = all('SELECT id,name,phone,email,role,employment,budget_month,budget_week,gewerke,main_gewerke,fixed,aliases,available_from,available_until,notes,active FROM people ORDER BY name').map(x => ({ ...x, gewerke: JSON.parse(x.gewerke || '[]'), main_gewerke: JSON.parse(x.main_gewerke || '[]'), phone: admin || x.id === me.id ? x.phone : (x.phone ? x.phone : ''), email: admin || x.id === me.id ? x.email : '' }));
         return json(res, 200, { me: { ...me, pin: undefined, gewerke: JSON.parse(me.gewerke || '[]') }, people, gewerke: all('SELECT * FROM gewerke ORDER BY sort'), season: setting('season'), rules: setting('rules'), checklist: all('SELECT * FROM checklist ORDER BY gewerk_id,phase,sort') });
       }
 
@@ -292,8 +379,8 @@ const server = http.createServer(async (req, res) => {
         // Budget-Ampel je Person und Monat: ok / warn (>85 %) / bad (Budget oder Minijob-Grenze überschritten)
         const months = [...new Set(shifts.map(s => s.date.slice(0, 7)))];
         const budget = {};
-        for (const pp of all('SELECT id,budget_month FROM people WHERE active=1')) for (const mo of months) {
-          const st = personStats(pp.id, mo); const pct = st.hours / (pp.budget_month || 1);
+        for (const pp of all('SELECT id,budget_month,fixed FROM people WHERE active=1')) for (const mo of months) {
+          const st = personStats(pp.id, mo); const pct = pp.fixed ? 0 : st.hours / (pp.budget_month || 1); // „Schichten fix“: Kontingent = die eingetragenen Schichten
           budget[`${pp.id}:${mo}`] = { hours: st.hours, level: st.warnings.length || pct > 1 ? 'bad' : pct > 0.85 ? 'warn' : 'ok' };
         }
         return json(res, 200, { shifts, availability: avail, budget });
@@ -383,11 +470,20 @@ const server = http.createServer(async (req, res) => {
       }
       if (p === '/api/availability') return json(res, 200, all('SELECT * FROM availability WHERE person_id=?', me.id));
 
+      // --- Einlesen (Textliste / Excel) und Dienstplan-Vorschlag ---
+      if (p === '/api/import/people' && req.method === 'POST' && need(admin)) { const r = importer.importPeopleText(String(body.text || ''), !!body.apply); if (body.apply) broadcast({ type: 'people' }); return json(res, 200, r); }
+      if (p === '/api/import/xlsx' && req.method === 'POST' && need(admin)) {
+        let r; try { r = importer.importXlsx(Buffer.from(String(body.file || ''), 'base64'), !!body.apply); } catch (e) { return json(res, 400, { error: e.message }); }
+        if (body.apply) { broadcast({ type: 'people' }); broadcast({ type: 'shifts' }); } return json(res, 200, r);
+      }
+      if (p === '/api/plan/propose' && req.method === 'POST' && need(admin)) return json(res, 200, planner.propose(body));
+      if (p === '/api/plan/apply' && req.method === 'POST' && need(admin)) { const r = planner.apply(body.proposals || [], me.id); broadcast({ type: 'shifts' }); return json(res, 200, r); }
+
       // --- Leute ---
       if (p === '/api/people' && req.method === 'POST' && need(admin)) {
         const pin = body.pin || String(Math.floor(1000 + Math.random() * 9000));
         if (get('SELECT 1 FROM people WHERE pin=?', pin)) return json(res, 400, { error: 'PIN schon vergeben' });
-        const r = run('INSERT INTO people(name,phone,email,pin,token,role,employment,budget_month,budget_week,gewerke,notes,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', body.name, body.phone || '', body.email || '', pin, crypto.randomBytes(12).toString('hex'), body.role || 'staff', body.employment || 'minijob', body.budget_month ?? 40, body.budget_week ?? 20, JSON.stringify(body.gewerke || []), body.notes || '', now());
+        const r = run('INSERT INTO people(name,phone,email,pin,token,role,employment,budget_month,budget_week,gewerke,main_gewerke,fixed,aliases,available_from,available_until,notes,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', body.name, body.phone || '', body.email || '', pin, crypto.randomBytes(12).toString('hex'), body.role || 'staff', body.employment || 'minijob', body.budget_month ?? 40, body.budget_week ?? 20, JSON.stringify(body.gewerke || []), JSON.stringify(body.main_gewerke || []), body.fixed ? 1 : 0, body.aliases || '', body.available_from || '', body.available_until || '', body.notes || '', now());
         log(me.id, 'person.create', body.name); broadcast({ type: 'people' }); return json(res, 200, { id: Number(r.lastInsertRowid), pin });
       }
       const mp = p.match(/^\/api\/people\/(\d+)$/);
@@ -401,7 +497,7 @@ const server = http.createServer(async (req, res) => {
             if (get('SELECT 1 FROM people WHERE pin=? AND id<>?', np, id)) return json(res, 400, { error: 'PIN schon vergeben' });
           }
           body.pin = np || undefined;
-          if (admin) run('UPDATE people SET name=?,phone=?,email=?,role=?,employment=?,budget_month=?,budget_week=?,gewerke=?,notes=?,active=?,pin=? WHERE id=?', body.name ?? pr.name, body.phone ?? pr.phone, body.email ?? pr.email, body.role ?? pr.role, body.employment ?? pr.employment, body.budget_month ?? pr.budget_month, body.budget_week ?? pr.budget_week, JSON.stringify(body.gewerke ?? JSON.parse(pr.gewerke || '[]')), body.notes ?? pr.notes, body.active ?? pr.active, body.pin ?? pr.pin, id);
+          if (admin) run('UPDATE people SET name=?,phone=?,email=?,role=?,employment=?,budget_month=?,budget_week=?,gewerke=?,main_gewerke=?,fixed=?,aliases=?,available_from=?,available_until=?,notes=?,active=?,pin=? WHERE id=?', body.name ?? pr.name, body.phone ?? pr.phone, body.email ?? pr.email, body.role ?? pr.role, body.employment ?? pr.employment, body.budget_month ?? pr.budget_month, body.budget_week ?? pr.budget_week, JSON.stringify(body.gewerke ?? JSON.parse(pr.gewerke || '[]')), JSON.stringify(body.main_gewerke ?? JSON.parse(pr.main_gewerke || '[]')), body.fixed != null ? (body.fixed ? 1 : 0) : pr.fixed, body.aliases ?? pr.aliases, body.available_from ?? pr.available_from, body.available_until ?? pr.available_until, body.notes ?? pr.notes, body.active ?? pr.active, body.pin ?? pr.pin, id);
           else if (id === me.id) run('UPDATE people SET phone=?,email=?,pin=? WHERE id=?', body.phone ?? pr.phone, body.email ?? pr.email, body.pin ?? pr.pin, id);
           else return json(res, 403, {});
           log(me.id, 'person.edit', pr.name); broadcast({ type: 'people' }); return json(res, 200, { ok: true });
@@ -412,8 +508,8 @@ const server = http.createServer(async (req, res) => {
       // --- Stunden ---
       if (p === '/api/hours') {
         const month = url.searchParams.get('month');
-        const ids = admin ? all('SELECT id,name,employment,budget_month FROM people WHERE active=1 ORDER BY name') : [{ id: me.id, name: me.name, employment: me.employment, budget_month: me.budget_month }];
-        return json(res, 200, ids.map(pp => ({ ...pp, ...personStats(pp.id, month) })));
+        const ids = admin ? all('SELECT id,name,employment,budget_month,fixed FROM people WHERE active=1 ORDER BY name') : [{ id: me.id, name: me.name, employment: me.employment, budget_month: me.budget_month, fixed: me.fixed }];
+        return json(res, 200, ids.map(pp => { const st = personStats(pp.id, month); return { ...pp, ...st, budget_month: pp.fixed ? st.hours : pp.budget_month }; })); // fix: Budget = Summe der Schichten
       }
       if (p === '/api/hours.csv' && need(admin)) {
         const month = url.searchParams.get('month');
@@ -454,9 +550,9 @@ const server = http.createServer(async (req, res) => {
 
       // --- Einstellungen ---
       if (p === '/api/settings' && req.method === 'PUT' && need(admin)) {
-        if (body.rules) setSetting('rules', { ...setting('rules'), ...body.rules });
+        if (body.rules) { setSetting('rules', { ...setting('rules'), ...body.rules }); regenerateShifts(me.id); }
         if (body.season) setSetting('season', { ...setting('season'), ...body.season });
-        if (body.gewerke) for (const g of body.gewerke) { if (g.id) run('UPDATE gewerke SET name=?,short=?,rate=?,lead_min=?,lead_handover_min=?,demand_day=?,demand_eve=?,demand_eve_peak=?,color=?,sort=?,active=? WHERE id=?', g.name, g.short, g.rate, g.lead_min, g.lead_handover_min, g.demand_day, g.demand_eve, g.demand_eve_peak, g.color, g.sort ?? 0, g.active ?? 1, g.id); else { const r = run('INSERT INTO gewerke(name,short,rate,lead_min,lead_handover_min,demand_day,demand_eve,demand_eve_peak,color,sort) VALUES(?,?,?,?,?,?,?,?,?,?)', g.name, g.short, g.rate, g.lead_min, g.lead_handover_min, g.demand_day, g.demand_eve, g.demand_eve_peak, g.color || '#666', g.sort ?? 99); for (const s of all('SELECT id FROM shifts')) run('INSERT OR IGNORE INTO demand VALUES(?,?,0)', s.id, Number(r.lastInsertRowid)); } }
+        if (body.gewerke) for (const g of body.gewerke) { if (g.id) run('UPDATE gewerke SET name=?,short=?,rate=?,lead_min=?,lead_handover_min=?,end_after_last=?,demand_day=?,demand_eve=?,demand_eve_peak=?,color=?,sort=?,active=? WHERE id=?', g.name, g.short, g.rate, g.lead_min, g.lead_handover_min ?? 0, g.end_after_last ?? null, g.demand_day, g.demand_eve, g.demand_eve_peak, g.color, g.sort ?? 0, g.active ?? 1, g.id); else { const r = run('INSERT INTO gewerke(name,short,rate,lead_min,lead_handover_min,end_after_last,demand_day,demand_eve,demand_eve_peak,color,sort) VALUES(?,?,?,?,?,?,?,?,?,?,?)', g.name, g.short, g.rate, g.lead_min, g.lead_handover_min ?? 0, g.end_after_last ?? null, g.demand_day, g.demand_eve, g.demand_eve_peak, g.color || '#666', g.sort ?? 99); for (const s of all('SELECT id FROM shifts')) run('INSERT OR IGNORE INTO demand VALUES(?,?,0)', s.id, Number(r.lastInsertRowid)); } }
         if (body.checklist) { run('DELETE FROM checklist'); body.checklist.forEach((c, i) => run('INSERT INTO checklist(gewerk_id,text,phase,sort) VALUES(?,?,?,?)', c.gewerk_id, c.text, c.phase || 'start', i)); }
         log(me.id, 'settings', Object.keys(body).join(',')); broadcast({ type: 'settings' }); return json(res, 200, { ok: true });
       }
