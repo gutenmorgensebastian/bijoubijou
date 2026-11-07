@@ -54,7 +54,7 @@ const log = (pid, action, detail) => { run('INSERT INTO log(ts,person_id,action,
 // ---------- Seed ----------
 if (!get('SELECT 1 FROM settings WHERE key=?', 'seeded')) {
   setSetting('season', { start: '2026-11-13', end: '2027-01-31', name: 'Märchenhütten Winter 2026/27' });
-  setSetting('rules', { day_cutoff: '13:00', after_min: 105, after_min_floor: 90, split_min: 360, max_shift_min: 360, split_mode: 'half', pause_min: 180, minijob_2026: 603, minijob_2027: 633, max_day_h: 10, rest_h: 11, peak_days: [5, 6, 0], peak_from: '2026-12-01', peak_to: '2026-12-31', swap_mode: 'direct' });
+  setSetting('rules', { day_cutoff: '13:00', play_min: 60, after_min: 90, after_min_floor: 90, split_min: 360, max_shift_min: 360, split_mode: 'half', pause_min: 180, minijob_2026: 603, minijob_2027: 633, max_day_h: 10, rest_h: 11, peak_days: [5, 6, 0], peak_from: '2026-12-01', peak_to: '2026-12-31', swap_mode: 'direct' });
   setSetting('admin_pin', '1234');
   const gw = [
     ['Kasse', 'K', 15, 75, 0, 1, 1, 1, '#2f6fde'],
@@ -114,8 +114,8 @@ function computeDayPlan(date) {
   const ps = all('SELECT time FROM performances WHERE date=? ORDER BY time', date).map(p => toMin(p.time));
   if (!ps.length) return null;
   const lead = Math.max(0, ...all('SELECT lead_min FROM gewerke WHERE active=1').map(g => g.lead_min || 0));
-  const after = Math.max(rules.after_min ?? 105, rules.after_min_floor ?? 0);
-  const mk = (a) => ({ first: a[0], last: a[a.length - 1], start: a[0] - lead, end: a[a.length - 1] + after });
+  const after = Math.max(rules.after_min ?? 90, rules.after_min_floor ?? 0), play = rules.play_min ?? 0; // Nachlauf zählt ab Ende des letzten Stücks
+  const mk = (a) => ({ first: a[0], last: a[a.length - 1], start: a[0] - lead, end: a[a.length - 1] + play + after });
   const day = mk(ps); day.total = day.end - day.start;
   const mode = rules.split_mode || 'half', maxLen = rules.max_shift_min || 0;
   const cut = (s, e, n, ref) => Array.from({ length: n }, (_, i) => ({ s: i ? s + Math.round((e - s) * i / n / 5) * 5 : s, e: i === n - 1 ? e : s + Math.round((e - s) * (i + 1) / n / 5) * 5, ref }));
@@ -304,6 +304,11 @@ if (!get("SELECT 1 FROM settings WHERE key='einlass1'")) {
   const e = get("SELECT id FROM gewerke WHERE short='E'");
   if (e) run("UPDATE demand SET count=1 WHERE gewerk_id=? AND count>1 AND (SELECT COUNT(*) FROM assignments a WHERE a.shift_id=demand.shift_id AND a.gewerk_id=demand.gewerk_id AND a.status!='frei')<=1", e.id);
   setSetting('einlass1', true);
+}
+// Einmalige Umstellung: Nachlauf zählt ab Ende des letzten Stücks (Beginn + Spieldauer 60 min), danach 90 min
+if (!get("SELECT 1 FROM settings WHERE key='zeitlogik_v4'")) {
+  setSetting('rules', { ...setting('rules'), play_min: 60, after_min: 90, after_min_floor: 90 });
+  setSetting('zeitlogik_v4', true); setSetting('needs_generate', true);
 }
 if (setting('needs_generate')) { regenerateShifts(null); setSetting('needs_generate', false); }
 

@@ -46,7 +46,7 @@ Zugang von außen wie bei Pratomat über Tailscale (oder Cloudflare Tunnel). Die
 
 ## Regeln in der App
 
-- Arbeitstag je Tag aus dem Spielplan: erstes Stück = frühester Beginn, letztes Stück = spätester Beginn. Beginn = erstes Stück − größter Vorlauf (ADL, 2:00 h), Ende = letztes Stück + Nachlauf (Standard 105 min, mindestens 90 min).
+- Arbeitstag je Tag aus dem Spielplan: erstes Stück = frühester Beginn, letztes Stück = spätester Beginn. Beginn = erstes Stück − größter Vorlauf (ADL, 2:00 h), Ende = Ende des letzten Stücks (Beginn + Spieldauer, Standard 60 min) + Nachlauf (Standard 90 min).
 - Feste Vorläufe vor dem ersten Stück: ADL 2:00 h, Einlass 1:00 h, BA 1:00 h, Kasse 1:15 h. Die Kasse endet 30 Minuten nach Beginn des letzten Stücks (Spalte „Ende nach letztem Stück“ je Gewerk, leer = Ende des Arbeitstags). Alles in den Einstellungen änderbar.
 - Dauert der Arbeitstag mehr als 360 min (Einstellung), wird er geteilt (Tagschicht = erster Teil, Abendschicht = zweiter). Einstellung „Arbeitstag teilen“: *in zwei gleich lange Hälften* (Standard), *an einer langen Pause zwischen den Stücken* (ab 180 min zwischen zwei Stückbeginnen; jeder Block bekommt eigenen Beginn/Ende und eigene Vorläufe, sonst Hälften) oder *nie teilen*. Änderungen gelten sofort für alle nicht von Hand geänderten Schichten; einzelne Tage lassen sich unter „Zeiten/Besetzung“ von Hand anpassen. Gewerke, die in einer Schichthälfte nicht gebraucht werden, bekommen dort Soll 0. Kommzeit/Ende jedes Gewerks werden auf die Schicht zugeschnitten.
 - Stunden = Kommzeit bis Ende des Gewerks in der Schicht (oder eingetragene Ist-Zeiten). Betrag = Stunden × Stundensatz des Gewerks.
