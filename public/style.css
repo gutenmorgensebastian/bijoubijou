@@ -83,3 +83,5 @@ tr.ok td.h{background:var(--okbg)}tr.warn td.h{background:var(--warnbg)}tr.bad t
 
 u.bud-warn{text-decoration:underline wavy #ffd666;text-decoration-thickness:2px}u.bud-bad{text-decoration:underline wavy #ff8a80;text-decoration-thickness:2px;font-weight:700}
 .legend u.bud-warn{color:var(--warn)}.legend u.bud-bad{color:var(--bad)}
+
+.pinwarn{background:var(--badbg);color:var(--bad);padding:8px 16px;font-size:14px}

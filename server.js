@@ -362,6 +362,20 @@ function auth(req) {
   return get('SELECT * FROM people WHERE token=? AND active=1', tok) || null;
 }
 
+// ---------- Anmeldeschutz ----------
+// Echte Absender-Adresse: hinter einem Tunnel (cloudflared) kommt alles von 127.0.0.1, dann zählt der Kopf des Tunnels
+const clientIp = (req) => { const ra = req.socket.remoteAddress || ''; const local = /^(::1|127\.|::ffff:127\.)/.test(ra); return (local && (req.headers['cf-connecting-ip'] || String(req.headers['x-forwarded-for'] || '').split(',')[0].trim())) || ra; };
+const isHttps = (req) => req.headers['x-forwarded-proto'] === 'https' || /"scheme":"https"/.test(String(req.headers['cf-visitor'] || ''));
+// Nach 5 falschen PINs von einer Adresse 15 min Pause; insgesamt höchstens 50 Fehlversuche in 15 min (gegen verteiltes Raten)
+const LOGIN_WIN = 15 * 60000, fails = new Map(); let allFails = [];
+function loginBlocked(ip) {
+  const t = Date.now(), f = (fails.get(ip) || []).filter(x => t - x < LOGIN_WIN); fails.set(ip, f); allFails = allFails.filter(x => t - x < LOGIN_WIN);
+  const until = f.length >= 5 ? f[f.length - 5] + LOGIN_WIN : allFails.length >= 50 ? allFails[allFails.length - 50] + LOGIN_WIN : 0;
+  return until > t ? Math.ceil((until - t) / 60000) : 0;
+}
+function loginFailed(ip) { const t = Date.now(); fails.set(ip, [...(fails.get(ip) || []), t]); allFails.push(t); log(null, 'login.fail', ip); }
+function loginOk(ip) { fails.delete(ip); }
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const p = url.pathname;
@@ -373,14 +387,17 @@ const server = http.createServer(async (req, res) => {
   try {
     // --- Login ---
     if (p === '/api/login' && req.method === 'POST') {
+      const ip = clientIp(req), wait = loginBlocked(ip);
+      if (wait) return json(res, 429, { error: `Zu viele falsche PINs. Bitte in ${wait} min erneut versuchen.` });
       const pin = String(body.pin || '').trim();
-      const person = get('SELECT * FROM people WHERE pin=? AND active=1', pin);
-      if (!person) return json(res, 401, { error: 'PIN unbekannt' });
-      res.setHeader('set-cookie', `hp=${person.token}; Path=/; Max-Age=31536000; SameSite=Lax`);
+      const person = /^\d{4}$/.test(pin) ? get('SELECT * FROM people WHERE pin=? AND active=1', pin) : null;
+      if (!person) { loginFailed(ip); return json(res, 401, { error: 'PIN unbekannt' }); }
+      loginOk(ip);
+      res.setHeader('set-cookie', `hp=${person.token}; Path=/; Max-Age=31536000; SameSite=Lax; HttpOnly${isHttps(req) ? '; Secure' : ''}`);
       log(person.id, 'login', '');
       return json(res, 200, { ok: true });
     }
-    if (p === '/api/logout') { res.setHeader('set-cookie', 'hp=; Path=/; Max-Age=0'); return json(res, 200, { ok: true }); }
+    if (p === '/api/logout') { res.setHeader('set-cookie', `hp=; Path=/; Max-Age=0; HttpOnly${isHttps(req) ? '; Secure' : ''}`); return json(res, 200, { ok: true }); }
     if (p === '/api/me') return json(res, 200, me ? { ...me, pin: undefined, gewerke: JSON.parse(me.gewerke || '[]') } : null);
 
     // --- ICS (per Token) ---
@@ -409,7 +426,7 @@ const server = http.createServer(async (req, res) => {
       // --- Stammdaten ---
       if (p === '/api/bootstrap') {
         const people = all('SELECT id,name,phone,email,role,employment,budget_month,budget_week,gewerke,main_gewerke,fixed,aliases,available_from,available_until,notes,active FROM people ORDER BY name').map(x => ({ ...x, gewerke: JSON.parse(x.gewerke || '[]'), main_gewerke: JSON.parse(x.main_gewerke || '[]'), phone: admin || x.id === me.id ? x.phone : (x.phone ? x.phone : ''), email: admin || x.id === me.id ? x.email : '' }));
-        return json(res, 200, { me: { ...me, pin: undefined, gewerke: JSON.parse(me.gewerke || '[]') }, people, gewerke: all('SELECT * FROM gewerke ORDER BY sort'), season: setting('season'), rules: setting('rules'), checklist: all('SELECT * FROM checklist ORDER BY gewerk_id,phase,sort') });
+        return json(res, 200, { me: { ...me, pin: undefined, weak_pin: me.role === 'admin' && me.pin === '1234', gewerke: JSON.parse(me.gewerke || '[]') }, people, gewerke: all('SELECT * FROM gewerke ORDER BY sort'), season: setting('season'), rules: setting('rules'), checklist: all('SELECT * FROM checklist ORDER BY gewerk_id,phase,sort') });
       }
 
       // --- Plan ---

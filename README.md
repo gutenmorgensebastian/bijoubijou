@@ -17,6 +17,12 @@ Beim ersten Start werden angelegt: die vier Gewerke (Kasse 15 €, Einlass 15 �
 
 Die Daten liegen nur auf **einem** Rechner (Haupt-Mac). Dort `Huettenplan starten.command` doppelklicken; das Fenster zeigt die Adresse fürs WLAN (z. B. `http://Name.local:3080`). Auf dem zweiten Mac `Huettenplan im Netzwerk oeffnen.command` doppelklicken und beim ersten Mal diese Adresse eingeben. Beide Macs müssen im selben WLAN sein, und auf dem Haupt-Mac muss das Fenster offen bleiben. Handys im WLAN können dieselbe Adresse im Browser öffnen.
 
+## Vorübergehend online zeigen
+
+Doppelklick auf `Huettenplan online teilen.command`: lädt beim ersten Mal das Tunnel-Programm `cloudflared` (in den Ordner `.tools`), startet den Hüttenplan falls nötig und zeigt eine https-Adresse (`…trycloudflare.com`, schon in der Zwischenablage). Die Adresse gilt, solange das Fenster offen ist und der Mac wach bleibt; beim nächsten Start gibt es eine neue. Anmeldung mit der persönlichen PIN.
+
+Schutz der Anmeldung: nach 5 falschen PINs von einer Adresse 15 min Pause, insgesamt höchstens 50 Fehlversuche in 15 min; das Login-Cookie ist HttpOnly (über https zusätzlich Secure). Solange die Admin-PIN noch 1234 ist, zeigt die App Admins einen roten Hinweis.
+
 ## Dauerbetrieb auf dem Mac Mini
 
 ```bash
