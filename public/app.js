@@ -332,7 +332,7 @@ async function viewSpielplan(m) {
   $('#spNext').onclick = () => { S.spStart = addDays(S.spStart, 5); renderView(); };
   $('#spToday').onclick = () => { S.spStart = today(); renderView(); };
   if (!isAdmin()) return;
-  $('#imp').onclick = async () => { toast('Lese Spielplan…'); try { const r = await api('/performances/import', { method: 'POST' }); if (r.ok) toast(`${r.read} gelesen, ${r.added} neu, ${r.shifts} Schichten angelegt`); else toast(r.error, true); } catch (e) { toast(e.message, true); } };
+  $('#imp').onclick = async () => { toast('Lese Spielplan…'); try { const r = await api('/performances/import', { method: 'POST' }); if (r.ok) { toast(`${r.read} gelesen, ${r.added} neu, ${r.removed} entfernt, ${r.shifts} Schichten angelegt`); renderView(); } else toast(r.error, true); } catch (e) { toast(e.message, true); } };
   $('#csv').onclick = async () => { const csv = prompt('Zeilen im Format JJJJ-MM-TT;HH:MM;Titel;Zielgruppe (eine pro Zeile, mit Umbruch einfügen):'); if (!csv) return; const r = await api('/performances', { method: 'POST', body: { csv } }); toast(`${r.added} Termine, ${r.shifts} Schichten neu`); renderView(); };
   $('#addP').onclick = async () => { const date = prompt('Datum JJJJ-MM-TT'); if (!date) return; const time = prompt('Uhrzeit HH:MM'); const title = prompt('Titel'); const audience = prompt('Zielgruppe (Kinder/Familie/Erwachsene/Gastspiel)', 'Erwachsene'); await api('/performances', { method: 'POST', body: { date, time, title, audience } }); renderView(); };
   m.querySelectorAll('[data-delp]').forEach(a => a.onclick = async (e) => { e.preventDefault(); await api('/performances/' + a.dataset.delp, { method: 'DELETE' }); renderView(); });

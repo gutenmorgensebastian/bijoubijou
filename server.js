@@ -250,13 +250,18 @@ function personStats(pid, month) {
 // ---------- Spielplan-Import (maerchenhuetten.com) ----------
 async function importSpielplan(pid) {
   const season = setting('season');
-  const found = []; const seen = new Set();
+  const found = []; const seen = new Set(); let netError = '';
   for (let page = 1; page <= 20; page++) {
     const url = page === 1 ? 'https://maerchenhuetten.com/spielplan/' : `https://maerchenhuetten.com/spielplan/page/${page}/`;
     let html;
-    try { const r = await fetch(url, { headers: { 'user-agent': 'Huettenplan/1.0' } }); if (!r.ok) break; html = await r.text(); } catch (e) { break; }
+    try {
+      const r = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (Macintosh) Huettenplan/1.0' }, signal: AbortSignal.timeout(20000) });
+      if (!r.ok) { if (page === 1) netError = `Seite antwortet mit Fehler ${r.status}`; break; }
+      html = await r.text();
+    } catch (e) { if (page === 1) netError = `maerchenhuetten.com nicht erreichbar (${e.cause?.code || e.name || e.message}) – Internetverbindung prüfen`; break; }
+    // Titel steht in <h2>, die Stücke darin sind einzeln verlinkt: erst den Titel zu einer Zeile machen, dann alle Tags entfernen
     const text = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '')
-      .replace(/<h2[^>]*>/gi, '\n@@H2 ').replace(/<\/h2>/gi, ' @@/H2\n').replace(/<[^>]+>/g, '\n')
+      .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, (_, x) => '\n@@H2 ' + x.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ') + ' @@/H2\n').replace(/<[^>]+>/g, '\n')
       .replace(/&amp;/g, '&').replace(/&#8211;|&ndash;/g, '–').replace(/&#038;/g, '&').replace(/&quot;/g, '"').replace(/&#8217;/g, '’').replace(/&nbsp;/g, ' ');
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     let cur = null, n = 0;
@@ -270,7 +275,7 @@ async function importSpielplan(pid) {
       if (mh && cur && cur.t) {
         const title = mh[1].replace(/\s+/g, ' ').trim();
         const rest = lines.slice(i + 1, i + 6).join(' ');
-        const audience = /Nur für Erwachsene/i.test(rest) ? 'Erwachsene' : /Familienvorstellung/i.test(rest) ? 'Familie' : /Zu Gast/i.test(rest) ? 'Gastspiel' : (toMin(cur.t) < 12 * 60 ? 'Kinder' : 'Erwachsene');
+        const audience = /Nur für Erwachsene/i.test(rest) ? 'Erwachsene' : /Familienvorstellung|Kinder und Familien/i.test(rest) ? 'Familie' : /Zu Gast/i.test(rest) ? 'Gastspiel' : (toMin(cur.t) < 12 * 60 ? 'Kinder' : 'Erwachsene');
         let y = cur.y || (cur.m >= '07' ? season.start.slice(0, 4) : season.end.slice(0, 4));
         const date = `${y}-${cur.m}-${cur.d}`;
         const key = date + cur.t + title;
@@ -280,12 +285,19 @@ async function importSpielplan(pid) {
     }
     if (!n) break;
   }
-  if (!found.length) return { ok: false, error: 'Keine Termine erkannt. Seite nicht erreichbar oder Aufbau geändert. Bitte Spielplan per CSV einspielen.' };
+  if (!found.length) return { ok: false, error: netError || 'Seite erreichbar, aber keine Termine erkannt (Aufbau der Seite geändert?). Bitte Spielplan per CSV einspielen.' };
+  // Abgleich: im Zeitraum der Webseite gilt die Webseite. Früher eingelesene Vorstellungen, die dort nicht mehr stehen
+  // (abgesagt, verschoben, Titel anders geschrieben), werden entfernt; von Hand oder per CSV eingetragene bleiben.
+  const d0 = found.reduce((a, f) => f.date < a ? f.date : a, found[0].date), d1 = found.reduce((a, f) => f.date > a ? f.date : a, found[0].date);
+  const keep = new Set(found.map(f => f.date + f.time + f.title));
+  const stale = all("SELECT id,date,time,title FROM performances WHERE source='import' AND date>=? AND date<=?", d0, d1).filter(p => !keep.has(p.date + p.time + p.title));
+  for (const p of stale) run('DELETE FROM performances WHERE id=?', p.id);
   const ins = q('INSERT OR IGNORE INTO performances(date,time,title,audience,source) VALUES(?,?,?,?,?)');
   let added = 0; found.forEach(f => { if (ins.run(f.date, f.time, f.title, f.audience, 'import').changes) added++; });
+  planCache.clear();
   const created = regenerateShifts(pid);
-  log(pid, 'spielplan.import', `${found.length} gelesen, ${added} neu, ${created} Schichten neu`);
-  return { ok: true, read: found.length, added, shifts: created };
+  log(pid, 'spielplan.import', `${found.length} gelesen, ${added} neu, ${stale.length} entfernt, ${created} Schichten neu`);
+  return { ok: true, read: found.length, added, removed: stale.length, shifts: created, from: d0, to: d1 };
 }
 
 // Einmalige Umstellung auf die feste Zeitlogik (Vorläufe, Kassenende, Nachlauf, Schichtteilung)
