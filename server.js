@@ -534,6 +534,10 @@ const server = http.createServer(async (req, res) => {
         let r; try { r = importer.importXlsx(Buffer.from(String(body.file || ''), 'base64'), !!body.apply); } catch (e) { return json(res, 400, { error: e.message }); }
         if (body.apply) { broadcast({ type: 'people' }); broadcast({ type: 'shifts' }); } return json(res, 200, r);
       }
+      if (p === '/api/import/staff' && req.method === 'POST' && need(admin)) {
+        let r; try { r = importer.importStaff(Buffer.from(String(body.file || ''), 'base64'), !!body.apply); } catch (e) { return json(res, 400, { error: e.message }); }
+        if (body.apply) { broadcast({ type: 'people' }); broadcast({ type: 'shifts' }); } return json(res, 200, r);
+      }
       if (p === '/api/import/exact' && req.method === 'POST' && need(admin)) {
         let r; try { r = importer.importExact(Buffer.from(String(body.file || ''), 'base64'), !!body.apply); } catch (e) { return json(res, 400, { error: e.message }); }
         if (body.apply) { planCache.clear(); broadcast({ type: 'people' }); broadcast({ type: 'shifts' }); } return json(res, 200, r);

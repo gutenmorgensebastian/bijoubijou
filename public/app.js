@@ -382,7 +382,9 @@ function importCard() {
     <h3>Excel-Dienstplan (.xlsx)</h3><p class="mute">Liest Personal (Blatt Notizen), Sperrtage (SPERRER) und die Einteilung (Schichtplan; „?“ und leere Namen = offen). Bereits vorhandene Einteilungen werden nicht doppelt angelegt; Plätze richten sich nach den Zeitangaben im Schichtplan.</p>
     <input type="file" id="imFile" accept=".xlsx"><div class="row" style="margin-top:6px"><button class="small" id="imXlCheck">Prüfen</button><button class="small primary" id="imXlApply" disabled>Übernehmen</button></div><div id="imXlOut" class="im-out"></div>
     <h3>Schichtplan 1:1 übernehmen (.xlsx)</h3><p class="mute">Blatt „Schichtplan“ (Datum, ADL, Kasse, Einlass/BA Wilhelm und Jakob, weitere Spalten mit Namen im Kopf). Jede Zeile wird eine Schicht, jede Person bekommt genau die Zeiten aus der Tabelle. <b>Alle bisherigen Schichten und Einteilungen im Zeitraum der Datei werden ersetzt</b>; dort legt die App danach keine Schichten mehr automatisch an. Fehlende Personen werden angelegt.</p>
-    <input type="file" id="imExFile" accept=".xlsx"><div class="row" style="margin-top:6px"><button class="small" id="imExCheck">Prüfen</button><button class="small primary" id="imExApply" disabled>Übernehmen</button></div><div id="imExOut" class="im-out"></div></div>`;
+    <input type="file" id="imExFile" accept=".xlsx"><div class="row" style="margin-top:6px"><button class="small" id="imExCheck">Prüfen</button><button class="small primary" id="imExApply" disabled>Übernehmen</button></div><div id="imExOut" class="im-out"></div>
+    <h3>Mitarbeiterliste (.xlsx)</h3><p class="mute">Blatt „Mitarbeiterliste“ (Name, Voller Name, Aufgabenbereiche, Stunden / Vertrag, E-Mail, Handy) und „Sperrtage einzeln“. Setzt das Stundenbudget (<i>20h</i> = pro Woche, Monat = Woche × 4,45; <i>20h+</i> / <i>mehr als</i> = 15 % mehr; <i>max. 60h</i> = pro Monat; <i>offen</i> = bleibt), Verfügbarkeit („nur Dezember“, „ab 13.11.“), Gewerke, vollen Namen und Sperrtage. Meldet Einteilungen an Sperrtagen.</p>
+    <input type="file" id="imStFile" accept=".xlsx"><div class="row" style="margin-top:6px"><button class="small" id="imStCheck">Prüfen</button><button class="small primary" id="imStApply" disabled>Übernehmen</button></div><div id="imStOut" class="im-out"></div></div>`;
 }
 function bindImport() {
   const fileB64 = () => new Promise((ok, no) => { const f = $('#imFile').files[0]; if (!f) return no(new Error('Bitte erst eine Excel-Datei wählen')); const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.onerror = () => no(new Error('Datei nicht lesbar')); r.readAsDataURL(f); });
@@ -419,6 +421,23 @@ function bindImport() {
     } catch (e) { out.textContent = ''; toast(e.message, true); }
   };
   $('#imExCheck').onclick = () => exact(false); $('#imExApply').onclick = () => exact(true);
+  const staff = async (apply) => {
+    const out = $('#imStOut');
+    try {
+      const f = $('#imStFile').files[0]; if (!f) throw new Error('Bitte erst eine Excel-Datei wählen');
+      out.textContent = 'Lese …';
+      const file = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.onerror = () => no(new Error('Datei nicht lesbar')); r.readAsDataURL(f); });
+      const r = await api('/import/staff', { method: 'POST', body: { file, apply } });
+      const win = (x) => x.von || x.bis ? ` <span class="mute">verfügbar ${x.von ? 'ab ' + fmtD(x.von) : ''}${x.bis ? ' bis ' + fmtD(x.bis) : ''}</span>` : '';
+      const rows = (a) => a.map(x => `<tr><td>${esc(x.name)}</td><td class="mute">${esc(x.text)}</td><td>${x.vorher ? esc(x.vorher) : '<i>neu</i>'}</td><td><b>${esc(x.jetzt)}</b>${win(x)}</td></tr>`).join('');
+      const sec = (title, a, bad) => a.length ? `<details ${bad ? 'open' : ''}><summary class="${bad ? 'over' : ''}">${title}: ${a.length}</summary><ul>${a.map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>` : '';
+      out.innerHTML = `<b>${apply ? 'Übernommen' : 'Vorschau'}:</b> ${r.updated.length} Personen aktualisiert, ${r.created.length} neu, ${r.blocks} Sperrtage.
+        <table style="margin-top:6px"><tr><th>Name</th><th>laut Liste</th><th>bisher</th><th>neu</th></tr>${rows(r.updated)}${rows(r.created)}</table>`
+        + sec('Einteilungen an Sperrtagen / außerhalb der Verfügbarkeit', r.konflikte, true) + sec('Stunden noch offen (Budget bleibt)', r.offen) + sec('Voller Name übernommen', r.renamed) + sec('Name in den Sperrtagen nicht gefunden', r.unbekannt, true);
+      $('#imStApply').disabled = apply; if (apply) toast(`Übernommen: ${r.updated.length + r.created.length} Personen, ${r.blocks} Sperrtage`);
+    } catch (e) { out.textContent = ''; toast(e.message, true); }
+  };
+  $('#imStCheck').onclick = () => staff(false); $('#imStApply').onclick = () => staff(true);
 }
 
 // ---------- Protokoll ----------

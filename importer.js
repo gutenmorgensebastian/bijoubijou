@@ -366,5 +366,94 @@ module.exports = (ctx) => {
     return out;
   }
 
-  return { importPeopleText, importXlsx, importExact, parsePeopleText };
+  // ---------- Mitarbeiterliste (Name, voller Name, Aufgabenbereiche, Stunden/Vertrag, Sperrtage) ----------
+  // „20h“ = Stunden pro Woche (Monatsbudget = Woche × 4,45, mit „+“ 15 % mehr), „max. 60h“ = Monatsbudget,
+  // „offen“ = Budget bleibt. „nur Dezember“, „ab Dezember“, „ab 13.11.“, „13.11.–31.01.“ = Verfügbarkeitszeitraum.
+  const GW_WORDS = [['ADL', /\badl\b|abenddienst/i], ['BA', /\bba\b|bühnenassist/i], ['K', /\bkasse\b/i], ['E', /\beinlass\b/i]];
+  function parseHours(t) {
+    t = String(t || '').trim(); const r = {};
+    if (!t || /^offen$/i.test(t)) return r;
+    const max = /max\.?\s*(\d+(?:[.,]\d+)?)\s*h/i.exec(t), h = /(\d+(?:[.,]\d+)?)\s*h(\+)?/i.exec(t);
+    if (max) { r.month = Number(max[1].replace(',', '.')); r.week = Math.round(r.month / 4.45 * 10) / 10; }
+    else if (h) { r.week = Number(h[1].replace(',', '.')); r.plus = !!h[2] || /mehr als/i.test(t); r.month = Math.ceil(r.week * 4.45 * (r.plus ? 1.15 : 1)); }
+    if (/midijob/i.test(t)) r.employment = 'midijob'; else if (/minijob/i.test(t)) r.employment = 'minijob';
+    const season = ctx.setting('season'), yOf = (mo) => mo >= 7 ? +season.start.slice(0, 4) : +season.end.slice(0, 4);
+    const iso = (d, mo) => `${yOf(mo)}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const rng = /(\d{1,2})\.(\d{1,2})\.?\s*[–-]\s*(\d{1,2})\.(\d{1,2})\./.exec(t);
+    if (rng) r.win = { from: iso(+rng[1], +rng[2]), until: iso(+rng[3], +rng[4]) };
+    else { const m = /nur (?:im )?(\p{L}+)/iu.exec(t); if (m && monthDates(m[1])) r.win = monthDates(m[1]); else r.win = windowIn(t); }
+    return r;
+  }
+  // Person zu einem Namen der Liste finden: Vorname (auch Kurzform wie Doro/Dorothea), Nachname passend zum Initial („Juliane T“ = „Juliane Torhorst“);
+  // erst Personen mit passendem Nachnamen, dann solche ohne Nachnamen.
+  function matchStaff(people, short, full, used) {
+    const toks = norm(full || short).split(' ').filter(Boolean), shortToks = norm(short).split(' ').filter(Boolean);
+    const first = toks[0], last = toks.length > 1 ? toks[toks.length - 1] : (shortToks[1] || '');
+    const pool = people.filter(p => !used.has(p.id) && p.role !== 'admin');
+    const same = (a, b) => a === b || ALIAS[a] === b || ALIAS[b] === a; // Julia ≠ Juliane, Doro = Dorothea
+    const fm = pool.filter(p => { const f = p.n.split(' ')[0]; return f && first && same(f, first); });
+    const surnameOk = (p) => { const rest = p.n.split(' ').slice(1); return rest.length && last && rest.some(w => w.startsWith(last) || last.startsWith(w)); };
+    let c = fm.filter(surnameOk); if (c.length === 1) return c[0];
+    if (!c.length) { c = fm.filter(p => p.n.split(' ').length === 1); if (c.length === 1) return c[0]; if (!c.length && fm.length === 1 && !last) return fm[0]; }
+    return null;
+  }
+  function importStaff(buf, apply) {
+    const sheets = readXlsx(buf), list = sheets.Mitarbeiterliste;
+    if (!list) throw new Error('Blatt „Mitarbeiterliste“ nicht gefunden');
+    const head = list[1] || {}, col = (re) => Object.keys(head).find(c => re.test(String(head[c])));
+    const C = { name: col(/^name$/i) || 'A', full: col(/voller name/i), gw: col(/aufgaben/i), hours: col(/stunden/i), mail: col(/mail/i), phone: col(/handy|telefon/i), hint: col(/hinweis/i) };
+    const gws = Object.fromEntries(all('SELECT id,short FROM gewerke WHERE active=1').map(g => [g.short.toUpperCase(), g.id]));
+    const people = loadPeople(), used = new Set(), byLabel = {};
+    const out = { updated: [], created: [], offen: [], renamed: [], blocks: 0, konflikte: [], unbekannt: [] };
+    const rows = Object.entries(list).filter(([rn, r]) => +rn > 1 && r[C.name]).map(([, r]) => r);
+    if (apply) db.exec('BEGIN');
+    try {
+      for (const r of rows) {
+        const short = String(r[C.name]).trim(), full = String(r[C.full] || short).trim();
+        let p = matchStaff(people, short, full, used); const isNew = !p;
+        const gwList = String(r[C.gw] || '').replace(/\([^)]*\)/g, ' ');
+        const gIds = GW_WORDS.filter(([, re]) => re.test(gwList)).map(([k]) => gws[k]).filter(Boolean);
+        if (isNew) p = newPerson(people, apply, { name: full, gw: gIds });
+        used.add(p.id); byLabel[norm(short)] = p; byLabel[norm(full)] = p;
+        const before = { name: p.name, week: p.budget_week, month: p.budget_month };
+        if (!isNew && full.length > p.name.length && norm(full).startsWith(p.n.split(' ')[0].slice(0, 3))) {
+          if (!String(p.aliases || '').toLowerCase().includes(p.name.toLowerCase())) p.aliases = [p.aliases, p.name].filter(Boolean).join('; ');
+          out.renamed.push(`${p.name} → ${full}`); p.name = full; if (apply) run('UPDATE people SET name=? WHERE id=?', full, p.id);
+        }
+        p.gw = [...new Set([...p.gw, ...gIds])];
+        const h = parseHours(r[C.hours]);
+        if (h.week != null) { p.budget_week = h.week; p.budget_month = h.month; } else out.offen.push(p.name);
+        if (h.employment) p.employment = h.employment;
+        if (h.win) { p.available_from = h.win.from || ''; p.available_until = h.win.until || ''; }
+        const hint = [r[C.hours] ? `Stunden/Vertrag: ${r[C.hours]}` : '', r[C.hint] ? String(r[C.hint]) : ''].filter(Boolean).join(' · ');
+        if (hint && !String(p.notes || '').includes(hint)) p.notes = [p.notes, hint].filter(Boolean).join('\n');
+        if (apply) {
+          savePerson(p);
+          if (C.mail && r[C.mail] && !/^offen$/i.test(r[C.mail])) run('UPDATE people SET email=? WHERE id=?', String(r[C.mail]).trim(), p.id);
+          if (C.phone && r[C.phone] && !/^offen$/i.test(r[C.phone])) run('UPDATE people SET phone=? WHERE id=?', String(r[C.phone]).trim(), p.id);
+        }
+        if (h.win && p.id > 0) for (const a of all("SELECT s.date,g.name gname FROM assignments a JOIN shifts s ON s.id=a.shift_id JOIN gewerke g ON g.id=a.gewerk_id WHERE a.person_id=? AND a.status!='frei' AND (s.date<? OR (?!='' AND s.date>?)) ORDER BY s.date", p.id, h.win.from || '0000', h.win.until || '', h.win.until || '9999'))
+          out.konflikte.push(`${p.name}: ${dm(a.date)} ${a.gname} – laut Liste nur verfügbar ${h.win.from ? 'ab ' + dm(h.win.from) : ''}${h.win.until ? ' bis ' + dm(h.win.until) : ''}`);
+        const entry = { name: p.name, vorher: isNew ? null : `${before.week} h/W · ${before.month} h/M`, jetzt: `${p.budget_week} h/W · ${p.budget_month} h/M`, text: String(r[C.hours] || ''), von: p.available_from || '', bis: p.available_until || '' };
+        (isNew ? out.created : out.updated).push(entry);
+      }
+      // Sperrtage (Blatt „Sperrtage einzeln“) und Abgleich mit den Einteilungen
+      const sp = sheets['Sperrtage einzeln'] || {};
+      const ins = apply ? db.prepare("INSERT INTO availability(person_id,date,status,note) VALUES(?,?,'no',?) ON CONFLICT(person_id,date) DO UPDATE SET status='no',note=excluded.note") : null;
+      const seen = new Set();
+      for (const [rn, r] of Object.entries(sp)) {
+        if (+rn < 2 || typeof r.B !== 'number') continue;
+        const label = String(r.A || '').trim(), p = byLabel[norm(label)] || matchStaff(people, label, label, new Set());
+        if (!p) { if (!out.unbekannt.includes(label)) out.unbekannt.push(label); continue; }
+        const date = serialToDate(r.B), key = p.id + date; if (seen.has(key)) continue; seen.add(key);
+        out.blocks++; ins?.run(p.id, date, 'Sperrtag: ' + String(r.D || '').trim());
+        if (p.id > 0) for (const a of all("SELECT s.date,s.kind,g.name gname FROM assignments a JOIN shifts s ON s.id=a.shift_id JOIN gewerke g ON g.id=a.gewerk_id WHERE a.person_id=? AND s.date=? AND a.status!='frei'", p.id, date))
+          out.konflikte.push(`${p.name}: ${dm(date)} ${a.gname} (${{ tag: 'Tag', mitte: 'Mitte', abend: 'Abend' }[a.kind] || a.kind}) – ${String(r.D || 'Sperrtermin').trim()}`);
+      }
+      if (apply) { db.exec('COMMIT'); log(null, 'import.staff', `${out.updated.length} aktualisiert, ${out.created.length} neu, ${out.blocks} Sperrtage`); }
+    } catch (e) { if (apply) db.exec('ROLLBACK'); throw e; }
+    return out;
+  }
+
+  return { importPeopleText, importXlsx, importExact, importStaff, parsePeopleText };
 };
