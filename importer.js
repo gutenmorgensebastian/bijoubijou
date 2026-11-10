@@ -242,5 +242,129 @@ module.exports = (ctx) => {
     return out;
   }
 
-  return { importPeopleText, importXlsx, parsePeopleText };
+  // ---------- Schichtplan 1:1 übernehmen ----------
+  // Jede Zeile des Blatts „Schichtplan“ ist eine Schicht (Zeile ohne ADL, die sich mit einer Schicht desselben Tages überschneidet,
+  // gehört zu dieser). Schicht = frühester Beginn bis spätestes Ende aller Plätze der Zeile; jede Person bekommt genau die Zeiten
+  // ihres Platzes (arrive/plan_end). Im Zeitraum der Datei werden die bisherigen Schichten ersetzt und nicht mehr automatisch erzeugt.
+  const EXACT_POS = [{ t: 'B', n: 'C', g: 'ADL', label: 'ADL' }, { t: 'D', n: 'E', g: 'K', label: 'Kasse' }, { t: 'F', n: 'G', g: 'E', label: 'Einlass Wilhelm' }, { t: 'H', n: 'I', g: 'BA', label: 'BA Wilhelm' },
+    { t: 'J', n: 'K', g: 'E', label: 'Einlass Jakob' }, { t: 'L', n: 'M', g: 'BA', label: 'BA Jakob' }];
+  const RANGE_RE = /^\s*(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})\s*$/;
+  const T = (m) => String(Math.floor((m % 1440) / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  const dm = (d) => `${+d.slice(8)}.${+d.slice(5, 7)}.`;
+  function parseExact(sheet) {
+    const head = sheet[1] || {}, shifts = [], notes = [];
+    // weitere Spalten mit Zeiten (z. B. „Jochen“): Spaltenkopf = Name, Platz ohne Gewerk-Angabe → ADL-Spalte des Kopfs
+    const extra = Object.entries(head).filter(([c, v]) => typeof v === 'string' && !EXACT_POS.some(p => p.t === c || p.n === c) && c !== 'A').map(([c, v]) => ({ t: c, name: v.trim(), g: 'ADL', label: v.trim() + ' (eigene Spalte)' }));
+    for (const rn of Object.keys(sheet).map(Number).sort((a, b) => a - b)) {
+      const row = sheet[rn]; if (rn < 2 || typeof row.A !== 'number' || row.A < 40000) continue;
+      const date = serialToDate(row.A), ent = [];
+      for (const p of [...EXACT_POS, ...extra]) {
+        const raw = row[p.t]; if (raw == null || String(raw).trim() === '') { if (p.n && row[p.n] != null && String(row[p.n]).trim()) notes.push(`${dm(date)} ${p.label}: Name „${row[p.n]}“ ohne Zeit (Zeile ${rn})`); continue; }
+        const m = RANGE_RE.exec(String(raw));
+        if (!m) { notes.push(`${dm(date)} ${p.label}: „${raw}“ ist keine Zeitangabe – nicht übernommen (Zeile ${rn})`); continue; }
+        const s = +m[1] * 60 + +m[2]; let e = +m[3] * 60 + +m[4]; if (e <= s) e += 1440;
+        const nmRaw = p.name || String(row[p.n] ?? '').trim();
+        const names = nmRaw.split(/[\/,&+]| und /).map(x => x.trim()).filter(x => x && x !== '?');
+        const technik = names.some(x => /^technik$/i.test(x));
+        ent.push({ ...p, s, e, row: rn, names: names.filter(x => !/^technik$/i.test(x)), technik, raw: nmRaw });
+      }
+      if (!ent.length) continue;
+      const w0 = Math.min(...ent.map(x => x.s)), w1 = Math.max(...ent.map(x => x.e));
+      const prev = !ent.some(x => x.g === 'ADL' && !x.name) && shifts.find(x => x.date === date && Math.min(x.e, w1) > Math.max(x.s, w0));
+      if (prev) { prev.ent.push(...ent); prev.s = Math.min(prev.s, w0); prev.e = Math.max(prev.e, w1); prev.rows.push(rn); }
+      else shifts.push({ date, s: w0, e: w1, ent, rows: [rn] });
+    }
+    // Schichtart nach Reihenfolge am Tag
+    const byDate = {}; for (const x of shifts) (byDate[x.date] ||= []).push(x);
+    for (const [d, xs] of Object.entries(byDate)) {
+      xs.sort((a, b) => a.s - b.s);
+      const kinds = xs.length === 1 ? [xs[0].s < toMin(ctx.setting('rules').day_cutoff || '13:00') ? 'tag' : 'abend'] : xs.length === 2 ? ['tag', 'abend'] : ['tag', 'mitte', 'abend'];
+      if (xs.length > 3) notes.push(`${dm(d)}: ${xs.length} Schichten an einem Tag – nur 3 möglich, die übrigen fehlen`);
+      xs.forEach((x, i) => { x.kind = kinds[i]; });
+    }
+    return { shifts: shifts.filter(x => x.kind), notes };
+  }
+  function importExact(buf, apply) {
+    const sheets = readXlsx(buf);
+    if (!sheets.Schichtplan) throw new Error('Blatt „Schichtplan“ nicht gefunden');
+    const gws = Object.fromEntries(all('SELECT * FROM gewerke WHERE active=1').map(g => [g.short.toUpperCase(), g]));
+    const { shifts, notes } = parseExact(sheets.Schichtplan);
+    if (!shifts.length) throw new Error('Im Blatt „Schichtplan“ keine Schichten mit Zeiten gefunden');
+    const rules = ctx.setting('rules'), people = loadPeople();
+    const d0 = shifts[0].date, d1 = shifts.reduce((a, x) => x.date > a ? x.date : a, d0);
+    const out = { from: d0, to: d1, shifts: shifts.length, assignments: 0, people: { created: [], matched: [] }, replaced: 0, offen: [], technik: [], doppelt: [], zwei: [], ueberlang: [], ruhe: [], ohneSchicht: [], ohneVorstellung: [], ungedeckt: [], notes };
+    // Namen zuordnen: genauere Angaben zuerst („Juliane T“ vor „Juliane“), jede Person nur für eine Schreibweise
+    const labels = [...new Set(shifts.flatMap(x => x.ent.flatMap(e => e.names)))].sort((a, b) => b.split(/\s+/).length - a.split(/\s+/).length || b.length - a.length);
+    const used = new Set(), who = {};
+    if (apply) db.exec('BEGIN');
+    try {
+      for (const l of labels) {
+        const gIds = [...new Set(shifts.flatMap(x => x.ent.filter(e => e.names.includes(l)).map(e => gws[e.g]?.id)).filter(Boolean))];
+        let p = resolve(people, l, gIds.length === 1 ? gIds[0] : null, used);
+        if (p) out.people.matched.push(l === p.name ? l : `${l} → ${p.name}`);
+        else { p = newPerson(people, apply, { name: l, gw: gIds, main: [] }); out.people.created.push(l); }
+        const add = gIds.filter(id => !p.gw.includes(id)); if (add.length) { p.gw = [...p.gw, ...add]; if (apply) savePerson(p); }
+        used.add(p.id); who[l] = p;
+      }
+      if (apply) {
+        for (const s of all('SELECT id FROM shifts WHERE date>=? AND date<=?', d0, d1)) {
+          for (const t of ['assignments', 'demand', 'checks', 'todos']) run(`DELETE FROM ${t} WHERE shift_id=?`, s.id);
+          run('DELETE FROM shifts WHERE id=?', s.id); out.replaced++;
+        }
+      } else out.replaced = get('SELECT COUNT(*) c FROM shifts WHERE date>=? AND date<=?', d0, d1).c;
+      const perDay = {}; // Person → Datum → [[s,e,label]]
+      for (const x of shifts) {
+        let sid = null;
+        // Schichtzeit = Zeit der ADL (wie im Plan), ohne ADL der früheste Beginn bis zum spätesten Ende der Zeile
+        const adl = x.ent.filter(e => e.g === 'ADL'), ss = adl.length ? Math.min(...adl.map(e => e.s)) : x.s, se = adl.length ? Math.max(...adl.map(e => e.e)) : x.e;
+        if (apply) sid = Number(run('INSERT INTO shifts(date,kind,start,end,note,manual) VALUES(?,?,?,?,?,1)', x.date, x.kind, T(ss), T(se), '').lastInsertRowid);
+        const need = {};
+        for (const e of x.ent) {
+          const g = gws[e.g]; if (!g) continue;
+          if (e.technik && !e.names.length) { out.technik.push(`${dm(x.date)} ${e.label} ${T(e.s)}–${T(e.e)}`); continue; }
+          need[g.id] = (need[g.id] || 0) + Math.max(1, e.names.length);
+          if (!e.names.length) { out.offen.push(`${dm(x.date)} ${e.label} ${T(e.s)}–${T(e.e)}`); continue; }
+          if (e.names.length > 1) out.zwei.push(`${dm(x.date)} ${e.label} ${T(e.s)}–${T(e.e)}: ${e.names.join(' + ')}`);
+          for (const l of e.names) {
+            const p = who[l]; out.assignments++;
+            ((perDay[p.name] ||= {})[x.date] ||= []).push([e.s, e.e, e.label]);
+            if (apply) run("INSERT INTO assignments(shift_id,gewerk_id,person_id,status,arrive,plan_end,created) VALUES(?,?,?,'fest',?,?,?)", sid, g.id, p.id, T(e.s), T(e.e), now());
+          }
+        }
+        if (apply) for (const g of Object.values(gws)) run('INSERT INTO demand(shift_id,gewerk_id,count) VALUES(?,?,?)', sid, g.id, need[g.id] || 0);
+      }
+      // Prüfungen
+      const maxDay = (rules.max_day_h || 10) * 60, rest = (rules.rest_h || 11) * 60;
+      for (const [nm, days] of Object.entries(perDay)) {
+        const ds = Object.keys(days).sort();
+        for (const d of ds) {
+          const w = days[d].sort((a, b) => a[0] - b[0]);
+          for (let i = 1; i < w.length; i++) if (w[i][0] < w[i - 1][1]) out.doppelt.push(`${dm(d)} ${nm}: ${w[i - 1][2]} ${T(w[i - 1][0])}–${T(w[i - 1][1])} und ${w[i][2]} ${T(w[i][0])}–${T(w[i][1])}`);
+          const sum = w.reduce((n, x) => n + x[1] - x[0], 0); if (sum > maxDay) out.ueberlang.push(`${dm(d)} ${nm}: ${Math.round(sum / 6) / 10} h`);
+        }
+        for (let i = 1; i < ds.length; i++) {
+          const a = days[ds[i - 1]], b = days[ds[i]], gap = (Date.parse(ds[i]) - Date.parse(ds[i - 1])) / 60000 + Math.min(...b.map(x => x[0])) - Math.max(...a.map(x => x[1]));
+          if (gap < rest) out.ruhe.push(`${nm}: ${dm(ds[i - 1])} bis ${T(Math.max(...a.map(x => x[1])))} → ${dm(ds[i])} ab ${T(Math.min(...b.map(x => x[0])))} (${Math.round(gap / 6) / 10} h Pause)`);
+        }
+      }
+      const planDates = new Set(shifts.map(x => x.date));
+      for (const { date } of all('SELECT DISTINCT date FROM performances WHERE date>=? AND date<=? ORDER BY date', d0, d1)) if (!planDates.has(date)) out.ohneSchicht.push(`${dm(date)} (${all('SELECT time FROM performances WHERE date=? ORDER BY time', date).map(p => p.time).join(', ')})`);
+      for (const d of [...planDates].sort()) {
+        const perfs = all('SELECT time FROM performances WHERE date=? ORDER BY time', d).map(p => toMin(p.time));
+        if (!perfs.length) { out.ohneVorstellung.push(dm(d)); continue; }
+        const adl = shifts.filter(x => x.date === d).flatMap(x => x.ent.filter(e => e.g === 'ADL' && (e.names.length || e.technik)));
+        // ADL muss vom Beginn bis 45 min danach da sein (Übergabe zwischen zwei ADL zählt, wenn lückenlos)
+        const covered = (a, b) => { let t = a; for (const e of [...adl].sort((x, y) => x.s - y.s)) if (e.s <= t && e.e > t) t = e.e; return t >= b; };
+        for (const t of perfs) if (!covered(t, t + 45)) out.ungedeckt.push(`${dm(d)} ${T(t)}`);
+      }
+      if (apply) {
+        ctx.setSetting('fixed_plan', { from: d0, to: d1 });
+        const season = ctx.setting('season'); if (d0 < season.start || d1 > season.end) ctx.setSetting('season', { ...season, start: d0 < season.start ? d0 : season.start, end: d1 > season.end ? d1 : season.end });
+        db.exec('COMMIT'); log(null, 'import.schichtplan', `${shifts.length} Schichten, ${out.assignments} Einteilungen (${d0} bis ${d1}) 1:1 übernommen`);
+      }
+    } catch (e) { if (apply) db.exec('ROLLBACK'); throw e; }
+    return out;
+  }
+
+  return { importPeopleText, importXlsx, importExact, parsePeopleText };
 };

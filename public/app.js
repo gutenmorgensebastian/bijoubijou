@@ -374,7 +374,9 @@ function importCard() {
     <textarea id="imText" rows="6" placeholder="Name 20h/w Gewerke …"></textarea>
     <div class="row" style="margin-top:6px"><button class="small" id="imTextCheck">Prüfen</button><button class="small primary" id="imTextApply" disabled>Übernehmen</button></div><div id="imTextOut" class="im-out"></div>
     <h3>Excel-Dienstplan (.xlsx)</h3><p class="mute">Liest Personal (Blatt Notizen), Sperrtage (SPERRER) und die Einteilung (Schichtplan; „?“ und leere Namen = offen). Bereits vorhandene Einteilungen werden nicht doppelt angelegt; Plätze richten sich nach den Zeitangaben im Schichtplan.</p>
-    <input type="file" id="imFile" accept=".xlsx"><div class="row" style="margin-top:6px"><button class="small" id="imXlCheck">Prüfen</button><button class="small primary" id="imXlApply" disabled>Übernehmen</button></div><div id="imXlOut" class="im-out"></div></div>`;
+    <input type="file" id="imFile" accept=".xlsx"><div class="row" style="margin-top:6px"><button class="small" id="imXlCheck">Prüfen</button><button class="small primary" id="imXlApply" disabled>Übernehmen</button></div><div id="imXlOut" class="im-out"></div>
+    <h3>Schichtplan 1:1 übernehmen (.xlsx)</h3><p class="mute">Blatt „Schichtplan“ (Datum, ADL, Kasse, Einlass/BA Wilhelm und Jakob, weitere Spalten mit Namen im Kopf). Jede Zeile wird eine Schicht, jede Person bekommt genau die Zeiten aus der Tabelle. <b>Alle bisherigen Schichten und Einteilungen im Zeitraum der Datei werden ersetzt</b>; dort legt die App danach keine Schichten mehr automatisch an. Fehlende Personen werden angelegt.</p>
+    <input type="file" id="imExFile" accept=".xlsx"><div class="row" style="margin-top:6px"><button class="small" id="imExCheck">Prüfen</button><button class="small primary" id="imExApply" disabled>Übernehmen</button></div><div id="imExOut" class="im-out"></div></div>`;
 }
 function bindImport() {
   const fileB64 = () => new Promise((ok, no) => { const f = $('#imFile').files[0]; if (!f) return no(new Error('Bitte erst eine Excel-Datei wählen')); const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.onerror = () => no(new Error('Datei nicht lesbar')); r.readAsDataURL(f); });
@@ -393,6 +395,24 @@ function bindImport() {
   };
   $('#imTextCheck').onclick = () => run('text', false); $('#imTextApply').onclick = () => run('text', true);
   $('#imXlCheck').onclick = () => run('xlsx', false); $('#imXlApply').onclick = () => run('xlsx', true);
+  const exact = async (apply) => {
+    const out = $('#imExOut');
+    try {
+      const f = $('#imExFile').files[0]; if (!f) throw new Error('Bitte erst eine Excel-Datei wählen');
+      if (apply && !confirm('Alle Schichten und Einteilungen im Zeitraum der Datei werden ersetzt. Fortfahren?')) return;
+      out.textContent = 'Lese …';
+      const file = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.onerror = () => no(new Error('Datei nicht lesbar')); r.readAsDataURL(f); });
+      const r = await api('/import/exact', { method: 'POST', body: { file, apply } });
+      const sec = (title, a, bad) => a.length ? `<details ${bad ? 'open' : ''}><summary class="${bad ? 'over' : ''}">${title}: ${a.length}</summary><ul>${a.map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>` : '';
+      out.innerHTML = `<b>${apply ? 'Übernommen' : 'Vorschau'}:</b> ${fmtD(r.from)} bis ${fmtD(r.to)} · ${r.shifts} Schichten · ${r.assignments} Einteilungen · ersetzt ${r.replaced} bisherige Schichten.<br>
+        Personen neu: ${esc(list(r.people.created))}. Zugeordnet: ${esc(list(r.people.matched))}.`
+        + sec('Plätze ohne Namen (unbesetzt)', r.offen, true) + sec('Vorstellung ohne ADL (Beginn bis 45 min danach)', r.ungedeckt, true) + sec('Vorstellungstage ohne Schicht im Plan', r.ohneSchicht, true)
+        + sec('Doppelt eingeteilt (Zeiten überschneiden sich)', r.doppelt, true) + sec('Zwei Namen auf einem Platz (beide übernommen)', r.zwei, true) + sec(`Mehr als ${S.rules.max_day_h || 10} h an einem Tag`, r.ueberlang, true)
+        + sec(`Weniger als ${S.rules.rest_h || 11} h Ruhezeit`, r.ruhe, true) + sec('Von Technik besetzt', r.technik) + sec('Schichten an Tagen ohne Vorstellung im Spielplan', r.ohneVorstellung) + sec('Hinweise', r.notes);
+      $('#imExApply').disabled = apply; if (apply) toast(`Übernommen: ${r.shifts} Schichten, ${r.assignments} Einteilungen`);
+    } catch (e) { out.textContent = ''; toast(e.message, true); }
+  };
+  $('#imExCheck').onclick = () => exact(false); $('#imExApply').onclick = () => exact(true);
 }
 
 // ---------- Protokoll ----------

@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS reports(shift_id INTEGER PRIMARY KEY, person_id INTEG
 CREATE TABLE IF NOT EXISTS log(id INTEGER PRIMARY KEY, ts TEXT, person_id INTEGER, action TEXT, detail TEXT);
 `);
 
-for (const sql of ['ALTER TABLE gewerke ADD COLUMN end_after_last INTEGER', "ALTER TABLE people ADD COLUMN fixed INTEGER DEFAULT 0", "ALTER TABLE people ADD COLUMN main_gewerke TEXT DEFAULT '[]'", "ALTER TABLE people ADD COLUMN aliases TEXT DEFAULT ''", "ALTER TABLE people ADD COLUMN available_from TEXT DEFAULT ''", "ALTER TABLE people ADD COLUMN available_until TEXT DEFAULT ''"]) {
+for (const sql of ['ALTER TABLE gewerke ADD COLUMN end_after_last INTEGER', "ALTER TABLE people ADD COLUMN fixed INTEGER DEFAULT 0", "ALTER TABLE people ADD COLUMN main_gewerke TEXT DEFAULT '[]'", "ALTER TABLE people ADD COLUMN aliases TEXT DEFAULT ''", "ALTER TABLE people ADD COLUMN available_from TEXT DEFAULT ''", "ALTER TABLE people ADD COLUMN available_until TEXT DEFAULT ''", 'ALTER TABLE assignments ADD COLUMN plan_end TEXT']) {
   try { db.exec(sql); } catch (e) { /* Spalte existiert schon */ }
 }
 const q = (sql) => db.prepare(sql);
@@ -164,7 +164,9 @@ function regenerateShifts(pid) {
   const dates = all('SELECT DISTINCT date FROM performances ORDER BY date');
   const gws = all('SELECT * FROM gewerke WHERE active=1');
   let created = 0;
+  const fixed = setting('fixed_plan'); // Zeitraum eines 1:1 übernommenen Schichtplans: dort nichts automatisch anlegen oder ändern
   for (const { date } of dates) {
+    if (fixed && date >= fixed.from && date <= fixed.to) continue;
     const dp = dayPlan(date);
     const want = dp.parts;
     for (const w of want) {
@@ -194,9 +196,9 @@ function arrival(shift, gw, asg) {
   if (asg && asg.arrive) return asg.arrive;
   return toT(gwWindow(shift, gw)[0]);
 }
-function endOf(shift, gw) { return toT(gwWindow(shift, gw)[1]); }
+function endOf(shift, gw, asg) { return asg?.plan_end || toT(gwWindow(shift, gw)[1]); } // plan_end: Ende laut übernommenem Schichtplan
 function hoursOf(shift, gw, asg) {
-  const a = asg.actual_start || arrival(shift, gw, asg), e = asg.actual_end || endOf(shift, gw);
+  const a = asg.actual_start || arrival(shift, gw, asg), e = asg.actual_end || endOf(shift, gw, asg);
   let m = toMin(e) - toMin(a); if (m < 0) m += 1440; return Math.round(m / 6) / 10;
 }
 
@@ -207,7 +209,7 @@ function shiftView(s) {
   const [ws, we] = shiftWin(s);
   const perfs = all('SELECT time,title,audience FROM performances WHERE date=? ORDER BY time', s.date).filter(p => { const m = toMin(p.time); return m >= ws && m < we; });
   const g = gws.map(gw => {
-    const a = asgs.filter(x => x.gewerk_id === gw.id).map(x => ({ ...x, arrive_calc: arrival(s, gw, x), end_calc: endOf(s, gw), hours: hoursOf(s, gw, x) }));
+    const a = asgs.filter(x => x.gewerk_id === gw.id).map(x => ({ ...x, arrive_calc: arrival(s, gw, x), end_calc: endOf(s, gw, x), hours: hoursOf(s, gw, x) }));
     const filled = a.filter(x => x.status !== 'frei' && x.person_id).length;
     const open = a.filter(x => x.status === 'frei').length;
     return { gewerk: gw, demand: dem[gw.id] ?? 0, assignments: a, filled, open, missing: Math.max(0, (dem[gw.id] ?? 0) - filled - open) };
@@ -231,7 +233,7 @@ function personStats(pid, month) {
   const lines = rows.map(r => {
     const s = { id: r.shift_id, date: r.date, start: r.start, end: r.end, kind: r.kind }, gw = { id: r.gid, lead_min: r.lead_min, end_after_last: r.end_after_last };
     const h = hoursOf(s, gw, r); hours += h; pay += h * r.rate; days[r.date] = (days[r.date] || 0) + h;
-    return { date: r.date, kind: r.kind, gewerk: r.gname, arrive: arrival(s, gw, r), end: r.actual_end || endOf(s, gw), hours: h, rate: r.rate, pay: Math.round(h * r.rate * 100) / 100, holiday: isHoliday(r.date) };
+    return { date: r.date, kind: r.kind, gewerk: r.gname, arrive: arrival(s, gw, r), end: r.actual_end || endOf(s, gw, r), hours: h, rate: r.rate, pay: Math.round(h * r.rate * 100) / 100, holiday: isHoliday(r.date) };
   });
   const rules = setting('rules');
   const warnings = [];
@@ -480,6 +482,10 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/import/xlsx' && req.method === 'POST' && need(admin)) {
         let r; try { r = importer.importXlsx(Buffer.from(String(body.file || ''), 'base64'), !!body.apply); } catch (e) { return json(res, 400, { error: e.message }); }
         if (body.apply) { broadcast({ type: 'people' }); broadcast({ type: 'shifts' }); } return json(res, 200, r);
+      }
+      if (p === '/api/import/exact' && req.method === 'POST' && need(admin)) {
+        let r; try { r = importer.importExact(Buffer.from(String(body.file || ''), 'base64'), !!body.apply); } catch (e) { return json(res, 400, { error: e.message }); }
+        if (body.apply) { planCache.clear(); broadcast({ type: 'people' }); broadcast({ type: 'shifts' }); } return json(res, 200, r);
       }
       if (p === '/api/plan/propose' && req.method === 'POST' && need(admin)) return json(res, 200, planner.propose(body));
       if (p === '/api/plan/apply' && req.method === 'POST' && need(admin)) { const r = planner.apply(body.proposals || [], me.id); broadcast({ type: 'shifts' }); return json(res, 200, r); }
