@@ -313,11 +313,14 @@ function personForm(p) {
     <div class="row"><div class="grow"><label>Rolle</label><select id="fRole"><option value="staff" ${p.role === 'staff' ? 'selected' : ''}>Mitarbeiter:in</option><option value="admin" ${p.role === 'admin' ? 'selected' : ''}>Admin (Produktion/ADL)</option></select></div><div class="grow"><label>PIN (leer = automatisch)</label><input id="fPin" value="${esc(p.pin || '')}"></div><div class="grow"><label>Aktiv</label><select id="fAct"><option value="1" ${p.active ? 'selected' : ''}>ja</option><option value="0" ${!p.active ? 'selected' : ''}>nein</option></select></div></div>
     <label>Notizen (Vertrag, Verfügbarkeit, Semesterferien …)</label><textarea id="fNotes" rows="2">${esc(p.notes || '')}</textarea>
     <div class="row" style="margin-top:10px"><button class="primary" id="fSave">Speichern</button><button id="fCancel">Abbrechen</button></div></div>`;
-  $('#fCancel').onclick = () => $('#pForm').innerHTML = '';
+  // Formular steht unter der (langen) Liste: hinscrollen, nach Speichern/Abbrechen zurück zur Person
+  const back = () => { $('#pForm').innerHTML = ''; document.querySelector(`[data-edit="${p.id}"]`)?.closest('tr')?.scrollIntoView({ block: 'center' }); };
+  $('#pForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('#fName').focus({ preventScroll: true });
+  $('#fCancel').onclick = back;
   $('#fSave').onclick = async () => {
     const body = { name: $('#fName').value.trim(), phone: $('#fPhone').value.trim(), email: $('#fEmail').value.trim(), gewerke: [...document.querySelectorAll('#pForm [data-g]:checked')].map(c => Number(c.dataset.g)), employment: $('#fEmp').value, budget_month: Number($('#fBm').value), budget_week: Number($('#fBw').value), main_gewerke: [...document.querySelectorAll('#pForm [data-mg]:checked')].map(c => Number(c.dataset.mg)), fixed: $('#fFixed').checked ? 1 : 0, available_from: $('#fFrom').value, available_until: $('#fUntil').value, role: $('#fRole').value, pin: $('#fPin').value.trim() || undefined, active: Number($('#fAct').value), notes: $('#fNotes').value };
     if (!body.name) return toast('Name fehlt', true);
-    try { const r = p.id ? await api('/people/' + p.id, { method: 'PUT', body }) : await api('/people', { method: 'POST', body }); toast(r.pin ? `Angelegt. PIN: ${r.pin}` : 'gespeichert'); $('#pForm').innerHTML = ''; } catch (e) { toast(e.message, true); }
+    try { const r = p.id ? await api('/people/' + p.id, { method: 'PUT', body }) : await api('/people', { method: 'POST', body }); toast(r.pin ? `Angelegt. PIN: ${r.pin}` : 'gespeichert'); back(); } catch (e) { toast(e.message, true); }
   };
 }
 
