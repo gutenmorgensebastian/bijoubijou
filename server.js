@@ -202,6 +202,26 @@ function hoursOf(shift, gw, asg) {
   let m = toMin(e) - toMin(a); if (m < 0) m += 1440; return Math.round(m / 6) / 10;
 }
 
+// Schichttausch: angebotene Schicht (status 'tausch') bleibt bei der Person, bis jemand Gleichqualifiziertes sie übernimmt.
+// Gleichwertig sind dasselbe Gewerk und Kasse ↔ Einlass.
+const SWAP_GROUPS = [['K', 'E']];
+const swapWhen = (s) => `${+s.date.slice(8)}.${+s.date.slice(5, 7)}. (${{ tag: 'Tagschicht', mitte: 'Mittelschicht', abend: 'Abendschicht' }[s.kind] || s.kind}`;
+function canTake(person, gw) {
+  const mine = JSON.parse(person.gewerke || '[]');
+  if (mine.includes(gw.id)) return true;
+  const shorts = all('SELECT id,short FROM gewerke').filter(g => mine.includes(g.id)).map(g => g.short.toUpperCase());
+  return SWAP_GROUPS.some(grp => grp.includes(gw.short.toUpperCase()) && shorts.some(x => grp.includes(x)));
+}
+// Arbeitszeit einer Person an einem Tag, die sich mit [a,e] überschneidet (andere Schichten)
+function overlapOf(pid, date, shiftId, a, e) {
+  for (const r of all("SELECT a.*,s.date,s.start,s.end,s.kind,g.id gid,g.name gname,g.lead_min,g.end_after_last FROM assignments a JOIN shifts s ON s.id=a.shift_id JOIN gewerke g ON g.id=a.gewerk_id WHERE a.person_id=? AND s.date=? AND s.id!=? AND a.status!='frei'", pid, date, shiftId)) {
+    const sh = { id: r.shift_id, date: r.date, start: r.start, end: r.end, kind: r.kind }, g = { id: r.gid, lead_min: r.lead_min, end_after_last: r.end_after_last };
+    const ra = toMin(arrival(sh, g, r)); let re = toMin(endOf(sh, g, r)); if (re <= ra) re += 1440;
+    if (ra < e && a < re) return `${r.gname} ${toT(ra)}–${toT(re % 1440)}`;
+  }
+  return null;
+}
+
 function shiftView(s) {
   const gws = all('SELECT * FROM gewerke WHERE active=1 ORDER BY sort');
   const dem = Object.fromEntries(all('SELECT gewerk_id,count FROM demand WHERE shift_id=?', s.id).map(d => [d.gewerk_id, d.count]));
@@ -211,8 +231,8 @@ function shiftView(s) {
   const g = gws.map(gw => {
     const a = asgs.filter(x => x.gewerk_id === gw.id).map(x => ({ ...x, arrive_calc: arrival(s, gw, x), end_calc: endOf(s, gw, x), hours: hoursOf(s, gw, x) }));
     const filled = a.filter(x => x.status !== 'frei' && x.person_id).length;
-    const open = a.filter(x => x.status === 'frei').length;
-    return { gewerk: gw, demand: dem[gw.id] ?? 0, assignments: a, filled, open, missing: Math.max(0, (dem[gw.id] ?? 0) - filled - open) };
+    const open = a.filter(x => x.status === 'frei').length, swap = a.filter(x => x.status === 'tausch').length;
+    return { gewerk: gw, demand: dem[gw.id] ?? 0, assignments: a, filled, open, swap, missing: Math.max(0, (dem[gw.id] ?? 0) - filled - open) };
   });
   const checks = all('SELECT * FROM checks WHERE shift_id=?', s.id);
   const report = get('SELECT r.*,p.name person_name FROM reports r LEFT JOIN people p ON p.id=r.person_id WHERE shift_id=?', s.id);
@@ -324,6 +344,8 @@ if (!get("SELECT 1 FROM settings WHERE key='zeitlogik_v4'")) {
   setSetting('rules', { ...setting('rules'), play_min: 60, after_min: 90, after_min_floor: 90 });
   setSetting('zeitlogik_v4', true); setSetting('needs_generate', true);
 }
+// Einmalige Umstellung: freigegebene Schichten bleiben bei der Person, bis jemand übernimmt
+if (!get("SELECT 1 FROM settings WHERE key='tausch_v1'")) { run("UPDATE assignments SET status='tausch' WHERE status='frei' AND person_id IS NOT NULL"); setSetting('tausch_v1', true); }
 if (setting('needs_generate')) { regenerateShifts(null); setSetting('needs_generate', false); }
 
 
@@ -449,13 +471,20 @@ const server = http.createServer(async (req, res) => {
         if (!s || !gw) return json(res, 400, { error: 'Schicht/Gewerk fehlt' });
         const pid = admin && body.person_id ? body.person_id : me.id;
         const person = get('SELECT * FROM people WHERE id=?', pid);
-        if (!admin && !JSON.parse(person.gewerke || '[]').includes(gw.id)) return json(res, 403, { error: 'Dieses Gewerk ist dir nicht zugeordnet' });
+        if (!admin && !(body.take_id ? canTake(person, gw) : JSON.parse(person.gewerke || '[]').includes(gw.id))) return json(res, 403, { error: body.take_id ? `Diese Schicht kannst du nicht übernehmen (${gw.name})` : 'Dieses Gewerk ist dir nicht zugeordnet' });
         if (get("SELECT 1 FROM assignments WHERE shift_id=? AND person_id=? AND status!='frei'", s.id, pid)) return json(res, 400, { error: 'Person ist in dieser Schicht schon eingeteilt' });
         if (body.take_id) { // freie Schicht übernehmen
-          const a = get("SELECT * FROM assignments WHERE id=? AND status='frei'", body.take_id); if (!a) return json(res, 400, { error: 'Schicht ist nicht mehr frei' });
-          const mode = setting('rules').swap_mode;
-          run('UPDATE assignments SET person_id=?,status=?,arrive=NULL WHERE id=?', pid, mode === 'approve' && !admin ? 'angefragt' : 'fest', a.id);
-          log(me.id, 'shift.take', `${person.name} übernimmt ${gw.name} am ${s.date} (${s.kind})`);
+          const a = get("SELECT * FROM assignments WHERE id=? AND status IN ('frei','tausch')", body.take_id); if (!a) return json(res, 400, { error: 'Schicht wird nicht mehr zum Tausch angeboten' });
+          if (a.person_id === pid) return json(res, 400, { error: 'Das ist deine eigene Schicht' });
+          if (!admin) { // keine Überschneidung mit einer anderen eigenen Schicht am selben Tag
+            const g = get('SELECT * FROM gewerke WHERE id=?', a.gewerk_id), ra = toMin(arrival(s, g, a)); let re = toMin(endOf(s, g, a)); if (re <= ra) re += 1440;
+            const clash = overlapOf(pid, s.date, s.id, ra, re); if (clash) return json(res, 400, { error: `Du arbeitest zu der Zeit schon (${clash})` });
+          }
+          const mode = setting('rules').swap_mode, from = get('SELECT name FROM people WHERE id=?', a.person_id)?.name;
+          // Zeiten (Kommzeit/Ende laut Plan) gehören zum Platz und bleiben erhalten
+          run('UPDATE assignments SET person_id=?,status=?,released_by=?,note=? WHERE id=?', pid, mode === 'approve' && !admin ? 'angefragt' : 'fest', a.person_id, '', a.id);
+          log(me.id, 'shift.take', `${person.name} übernimmt ${gw.name} am ${s.date} (${s.kind})${from ? ' von ' + from : ''}`);
+          run('INSERT INTO messages(channel,person_id,text,ts) VALUES(?,?,?,?)', 'allgemein', me.id, `✅ Getauscht: ${person.name} übernimmt ${gw.name} am ${swapWhen(s)})${from ? ' von ' + from : ''}.`, now()); broadcast({ type: 'chat' });
         } else {
           const dem = get('SELECT count FROM demand WHERE shift_id=? AND gewerk_id=?', s.id, gw.id)?.count ?? 0;
           const filled = get("SELECT count(*) n FROM assignments WHERE shift_id=? AND gewerk_id=? AND status!='frei'", s.id, gw.id).n;
@@ -469,11 +498,21 @@ const server = http.createServer(async (req, res) => {
       const ma = p.match(/^\/api\/assign\/(\d+)$/);
       if (ma) {
         const a = get('SELECT * FROM assignments WHERE id=?', ma[1]); if (!a) return json(res, 404, {});
-        const s = get('SELECT * FROM shifts WHERE id=?', a.shift_id); const gw = get('SELECT name FROM gewerke WHERE id=?', a.gewerk_id);
+        const s = get('SELECT * FROM shifts WHERE id=?', a.shift_id); const gw = get('SELECT name,short FROM gewerke WHERE id=?', a.gewerk_id);
         if (!admin && a.person_id !== me.id) return json(res, 403, { error: 'Nicht deine Schicht' });
         if (req.method === 'DELETE') { run('DELETE FROM assignments WHERE id=?', a.id); log(me.id, 'shift.unassign', `${gw.name} ${s.date} (${s.kind}) entfernt`); broadcast({ type: 'shifts' }); return json(res, 200, { ok: true }); }
         if (req.method === 'PUT') {
-          if (body.action === 'release') { run("UPDATE assignments SET status='frei',released_by=?,note=? WHERE id=?", a.person_id, body.note || '', a.id); const pn = get('SELECT name FROM people WHERE id=?', a.person_id)?.name; log(me.id, 'shift.release', `${pn} gibt ${gw.name} am ${s.date} (${s.kind}) frei`); run('INSERT INTO messages(channel,person_id,text,ts) VALUES(?,?,?,?)', 'allgemein', me.id, `🔄 Schicht frei: ${gw.name} am ${s.date} (${s.kind}schicht)${body.note ? ' – ' + body.note : ''}`, now()); broadcast({ type: 'chat' }); }
+          if (body.action === 'release') { // zum Tausch anbieten: Person bleibt eingeteilt, bis jemand übernimmt
+            if (a.status !== 'fest') return json(res, 400, { error: 'Nur feste Einteilungen können zum Tausch angeboten werden' });
+            run("UPDATE assignments SET status='tausch',note=? WHERE id=?", body.note || '', a.id); const pn = get('SELECT name FROM people WHERE id=?', a.person_id)?.name;
+            const alt = SWAP_GROUPS.find(g => g.includes(String(gw.short).toUpperCase())), wer = alt ? alt.map(x => get('SELECT name FROM gewerke WHERE short=?', x)?.name || x).join(' oder ') : gw.name;
+            log(me.id, 'shift.release', `${pn} bietet ${gw.name} am ${s.date} (${s.kind}) zum Tausch an`);
+            run('INSERT INTO messages(channel,person_id,text,ts) VALUES(?,?,?,?)', 'allgemein', me.id, `🔄 Tausch gesucht: ${gw.name} am ${swapWhen(s)}${a.arrive ? ', ab ' + a.arrive : ''}) – ${pn} bleibt eingeteilt, bis jemand (${wer}) unter „Offen“ übernimmt.${body.note ? ' ' + body.note : ''}`, now()); broadcast({ type: 'chat' });
+          }
+          else if (body.action === 'withdraw') { // Angebot zurückziehen
+            if (a.status !== 'tausch') return json(res, 400, { error: 'Diese Schicht wird nicht zum Tausch angeboten' });
+            run("UPDATE assignments SET status='fest',note='' WHERE id=?", a.id); log(me.id, 'shift.withdraw', `${gw.name} ${s.date} (${s.kind}) nicht mehr zum Tausch`);
+          }
           else if (body.action === 'approve' && need(admin)) { run("UPDATE assignments SET status='fest' WHERE id=?", a.id); log(me.id, 'shift.approve', `${gw.name} ${s.date}`); }
           else if (body.action === 'times') { run('UPDATE assignments SET arrive=?,actual_start=?,actual_end=? WHERE id=?', body.arrive || null, body.actual_start || null, body.actual_end || null, a.id); log(me.id, 'shift.times', `${gw.name} ${s.date}: ${body.actual_start || '-'}–${body.actual_end || '-'}`); }
           broadcast({ type: 'shifts' }); return json(res, 200, { ok: true });

@@ -33,7 +33,7 @@ Zugang von außen wie bei Pratomat über Tailscale (oder Cloudflare Tunnel). Die
 2. **Leute** anlegen: Name, Telefon, Gewerke, Beschäftigungsform, Stundenbudget. Jede Person bekommt eine PIN → Link + PIN per WhatsApp verschicken. Die App kann aufs Handy-Homescreen gelegt werden.
 3. Mitarbeitende tragen unter **Mein Plan** ihre Nicht-Verfügbarkeit ein und unter **Offen** sich selbst in freie Plätze ihrer Gewerke.
 4. Du teilst unter **Plan** per Klick auf eine Schicht ein (Person wählen). Namen mit gelber/roter Wellenlinie sind über 85 % bzw. über ihrem Monatsbudget oder der Minijob-Grenze.
-5. **Tausch:** Wer nicht kann, klickt in seiner Schicht „Freigeben“ → die Schicht erscheint gestrichelt bei „Offen“ und als Nachricht im Chat; wer das Gewerk hat, übernimmt mit einem Klick. Alles steht im Protokoll.
+5. **Tausch:** Wer nicht kann, klickt in seiner Schicht „Tausch anbieten“. Die Person **bleibt eingeteilt** (Stunden, Kalender, Besetzung), bis jemand mit passender Qualifikation die Schicht unter „Offen“ übernimmt – ADL ↔ ADL, BA ↔ BA, Kasse ↔ Einlass. Wer übernimmt, bekommt dieselben Zeiten; Überschneidungen mit eigenen Schichten am selben Tag werden abgelehnt. Angebot und Übernahme erscheinen im Chat und im Protokoll; das Angebot lässt sich zurückziehen, solange niemand übernommen hat.
 6. Am Spieltag: **Checkliste** je Gewerk abhaken, **Aufgaben** erledigen, ADL schreibt den **Schichtbericht** (Besucher, Kasse, Vorkommnisse). Ist-Zeiten können pro Einsatz nachgetragen werden („Zeiten“).
 7. Monatsende: **Stunden** → CSV für die Lohnabrechnung.
 

@@ -25,7 +25,7 @@
     'Aufgaben für diese Schicht': 'Tasks for this shift', 'alle': 'all', 'Schichtbericht': 'Shift report', 'Wie lief es?': 'How did it go?', 'Besucher ca.': 'Visitors approx.', 'Kasse €': 'Cash €',
     'Vorkommnisse / Schäden / Fehlzeiten': 'Incidents / damage / absences', 'Bericht speichern': 'Save report', 'Chat zu dieser Schicht': 'Chat for this shift',
     'Zeiten/Besetzung': 'Times/staffing', 'Löschen': 'Delete', 'Sonn-/Feiertag': 'Sunday/holiday', 'Spitzentag': 'peak day', '★ Spitzentag': '★ peak day',
-    'FREI – wer übernimmt?': 'FREE – who takes it?', 'Übernehmen': 'Take over', 'Ich mache das': "I'll do it", 'Freigeben': 'Release', 'Zeiten': 'Times', 'OK': 'OK', 'wartet auf Freigabe': 'awaiting approval',
+    'FREI – wer übernimmt?': 'FREE – who takes it?', 'Übernehmen': 'Take over', 'Ich mache das': "I'll do it", 'Freigeben': 'Release', 'Tausch anbieten': 'Offer swap', 'Angebot zurückziehen': 'Withdraw offer', '🔄 Tausch angeboten': '🔄 Swap offered', '🔄 sucht Tausch – bleibt eingeteilt, bis jemand übernimmt': '🔄 looking for a swap – stays assigned until someone takes it', '🔄 Tausch gesucht': '🔄 Swap wanted', 'Zeiten': 'Times', 'OK': 'OK', 'wartet auf Freigabe': 'awaiting approval',
     'angefragt': 'requested', 'freigegeben': 'released', 'Person wählen…': 'Choose person…', '— andere —': '— other —', 'ok': 'ok',
     'Schicht zum Tausch freigeben': 'Release shift for swapping', 'Ist-Zeiten eintragen': 'Enter actual times',
     'Neue Aufgabe…': 'New task…', 'Details': 'Details',
