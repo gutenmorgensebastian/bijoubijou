@@ -23,15 +23,6 @@ Doppelklick auf `bijoubijou online teilen.command`: lädt beim ersten Mal das Tu
 
 Schutz der Anmeldung: nach 5 falschen PINs von einer Adresse 15 min Pause, insgesamt höchstens 50 Fehlversuche in 15 min; das Login-Cookie ist HttpOnly (über https zusätzlich Secure). Solange die Admin-PIN noch 1234 ist, zeigt die App Admins einen roten Hinweis.
 
-## Menüleiste: Servermodus / Normalmodus
-
-Einmalig `bijoubijou Menueleiste einrichten.command` doppelklicken (baut `bijoubijou Server.app` aus `menueleiste/main.swift`; braucht die Apple-Entwicklerwerkzeuge, die das Skript bei Bedarf installieren lässt). Danach steht oben rechts „○ bijou“.
-
-- **Servermodus (● bijou):** Mac geht bei Untätigkeit nicht schlafen (Bildschirm darf aus), bijoubijou und der Online-Link laufen und werden nach einem Absturz oder Netzwechsel neu gestartet, der aktuelle Link steht im Menü („Link kopieren“). Warnt, wenn der Mac auf Akku läuft. Optional „Auch bei zugeklapptem Deckel wach bleiben“ (Admin-Passwort, `pmset disablesleep`); wird im Normalmodus und beim Beenden wieder ausgeschaltet. Der Modus bleibt nach einem Neustart erhalten.
-- **Normalmodus (○ bijou):** Mac schläft wie gewohnt; was das Programm gestartet hat (Server, Link), wird beendet.
-
-Hinweis: Der Link (`…trycloudflare.com`) ändert sich, wenn der Tunnel neu startet – dann im Menü neu kopieren. Für einen festen Link gehört die App auf einen Server.
-
 ## Dauerbetrieb auf dem Mac Mini
 
 ```bash
