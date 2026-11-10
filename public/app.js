@@ -1,4 +1,4 @@
-/* Hüttenplan – Frontend (vanilla JS) */
+/* bijoubijou – Frontend (vanilla JS) */
 'use strict';
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -43,7 +43,7 @@ async function loadShifts() { const r = await api('/shifts'); S.shifts = r.shift
 const budgetOf = (pid, date) => S.budget[`${pid}:${date.slice(0, 7)}`] || { level: 'ok', hours: 0 };
 
 function renderLogin() {
-  app.innerHTML = `<div class="login card"><h2>Hüttenplan</h2><p class="mute">Märchenhütten im Monbijoupark – Schichtplan</p><input id="pin" inputmode="numeric" placeholder="PIN" autofocus><br><br><button class="primary" id="go">Anmelden</button><p class="mute" style="margin-top:20px">Deine PIN bekommst du von der Produktionsleitung.</p></div>`;
+  app.innerHTML = `<div class="login card"><h2>bijoubijou</h2><p class="mute">Märchenhütten im Monbijoupark – Schichtplan</p><input id="pin" inputmode="numeric" placeholder="PIN" autofocus><br><br><button class="primary" id="go">Anmelden</button><p class="mute" style="margin-top:20px">Deine PIN bekommst du von der Produktionsleitung.</p></div>`;
   const go = async () => { try { await api('/login', { method: 'POST', body: { pin: $('#pin').value } }); boot(); } catch (e) { toast(e.message, true); } };
   $('#pin').focus(); $('#go').onclick = go; $('#pin').onkeydown = e => { if (e.key === 'Enter') go(); };
 }
@@ -52,7 +52,7 @@ function renderLogin() {
 const VIEWS = () => [['plan', 'Plan'], ['mine', 'Mein Plan'], ['open', 'Offen'], ['chat', 'Chat'], ['todos', 'Aufgaben'], ['hours', 'Stunden'], ['people', 'Leute'], ['spielplan', 'Spielplan'], ...(isAdmin() ? [['settings', 'Einstellungen'], ['log', 'Protokoll']] : [])];
 function openCount() { let n = 0; for (const s of S.shifts) for (const g of s.gewerke) if (!myGw().length || myGw().includes(g.gewerk.id) || isAdmin()) n += g.missing + g.open; return n; }
 function render() {
-  app.innerHTML = `<header><h1>Hüttenplan</h1><span class="me">${esc(S.me.name)}${isAdmin() ? ' · Admin' : ''}</span><button class="small" id="logout" style="color:#fff;background:transparent;border-color:#555">Abmelden</button></header>${S.me.weak_pin ? '<div class="pinwarn">⚠ Deine Admin-PIN ist noch <b>1234</b> und steht öffentlich im Code. Bitte unter <b>Mein Plan → Neue PIN</b> ändern, bevor andere die App nutzen.</div>' : ''}
+  app.innerHTML = `<header><h1>bijoubijou</h1><span class="me">${esc(S.me.name)}${isAdmin() ? ' · Admin' : ''}</span><button class="small" id="logout" style="color:#fff;background:transparent;border-color:#555">Abmelden</button></header>${S.me.weak_pin ? '<div class="pinwarn">⚠ Deine Admin-PIN ist noch <b>1234</b> und steht öffentlich im Code. Bitte unter <b>Mein Plan → Neue PIN</b> ändern, bevor andere die App nutzen.</div>' : ''}
   <nav>${VIEWS().map(([k, n]) => `<button data-v="${k}" class="${S.view === k ? 'active' : ''}">${n}${k === 'open' && openCount() ? `<span class="badge">${openCount()}</span>` : ''}</button>`).join('')}</nav><main id="main"></main><div id="drawer"></div>`;
   app.querySelectorAll('nav button').forEach(b => b.onclick = () => { S.view = b.dataset.v; render(); });
   $('#logout').onclick = async () => { await api('/logout'); location.reload(); };

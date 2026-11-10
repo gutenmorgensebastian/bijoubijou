@@ -1,12 +1,12 @@
 #!/bin/bash
-# Doppelklick: macht den Hüttenplan auf diesem Mac vorübergehend über eine https-Adresse aus dem Internet erreichbar
+# Doppelklick: macht bijoubijou auf diesem Mac vorübergehend über eine https-Adresse aus dem Internet erreichbar
 # (Cloudflare Quick Tunnel, kostenlos, ohne Konto). Die Adresse gilt, solange dieses Fenster offen ist; beim
 # nächsten Start gibt es eine neue. Für den Dauerbetrieb gehört die App auf einen Server.
 cd "$(dirname "$0")"
 PORT=${PORT:-3080}; mkdir -p .tools
 pause() { read -n 1 -s -r -p "Taste drücken zum Schließen …"; echo; }
 if ! command -v node >/dev/null 2>&1; then for p in /opt/homebrew/bin /usr/local/bin; do [ -x "$p/node" ] && export PATH="$p:$PATH"; done; fi
-command -v node >/dev/null 2>&1 || { echo "Node.js fehlt – bitte zuerst „Huettenplan starten“ einrichten."; pause; exit 1; }
+command -v node >/dev/null 2>&1 || { echo "Node.js fehlt – bitte zuerst „bijoubijou starten“ einrichten."; pause; exit 1; }
 
 # 1. cloudflared besorgen (einmalig, landet im Ordner .tools)
 CF="$(command -v cloudflared || true)"
@@ -20,10 +20,10 @@ if [ -z "$CF" ]; then
   fi
 fi
 
-# 2. Hüttenplan starten, falls er noch nicht läuft (wird beim Schließen wieder beendet)
+# 2. bijoubijou starten, falls er noch nicht läuft (wird beim Schließen wieder beendet)
 SERVER=""
 if ! curl -s -o /dev/null -m 3 "http://localhost:$PORT/api/me"; then
-  echo "Starte den Hüttenplan …"
+  echo "Starte bijoubijou …"
   PORT=$PORT node server.js > .tools/server.log 2>&1 &
   SERVER=$!
   for i in 1 2 3 4 5 6 7 8 9 10; do sleep 1; curl -s -o /dev/null -m 2 "http://localhost:$PORT/api/me" && break; done
@@ -42,7 +42,7 @@ if [ -z "$URL" ]; then echo "Tunnel konnte nicht geöffnet werden:"; tail -5 "$L
 echo "$URL" | pbcopy 2>/dev/null
 echo
 echo "=================================================================="
-echo "  Der Hüttenplan ist jetzt erreichbar unter:"
+echo "  bijoubijou ist jetzt erreichbar unter:"
 echo
 echo "     $URL"
 echo

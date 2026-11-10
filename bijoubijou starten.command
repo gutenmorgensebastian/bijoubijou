@@ -1,5 +1,5 @@
 #!/bin/bash
-# Doppelklick startet den Hüttenplan lokal und öffnet den Browser.
+# Doppelklick startet bijoubijou lokal und öffnet den Browser.
 cd "$(dirname "$0")"
 
 if ! command -v node >/dev/null 2>&1; then
@@ -33,7 +33,7 @@ elif [ ! -d .git ]; then
   # ZIP-Kopie: einmalig in eine Git-Kopie verwandeln (Daten in data/ bleiben erhalten)
   if git ls-remote -q "$REPO" main >/dev/null 2>&1; then
     git init -q && git remote add origin "$REPO" && git fetch -q origin main && git checkout -q -f -B main origin/main && git branch -q -u origin/main \
-      && echo "Eingerichtet: Ab jetzt aktualisiert sich der Hüttenplan bei jedem Start. Version: $(git log --oneline -1)" \
+      && echo "Eingerichtet: Ab jetzt aktualisiert sich bijoubijou bei jedem Start. Version: $(git log --oneline -1)" \
       || { rm -rf .git; echo "Hinweis: Einrichtung fehlgeschlagen, starte mit vorhandener Version."; }
   else
     echo "Hinweis: Update nicht möglich (kein Internet oder Repo privat). Version: $(cat VERSION 2>/dev/null || echo unbekannt)"
@@ -48,7 +48,7 @@ else
 fi
 
 PORT=${PORT:-3080}
-echo "Hüttenplan startet auf http://localhost:$PORT  (Admin-PIN: 1234)"
+echo "bijoubijou startet auf http://localhost:$PORT  (Admin-PIN: 1234)"
 # Adressen für andere Geräte im selben WLAN (anderer Mac, Handys)
 HOST=$(scutil --get LocalHostName 2>/dev/null)
 IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)

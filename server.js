@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Hüttenplan – Schichtplanung Märchenhütten
+// bijoubijou – Schichtplanung Märchenhütten
 // Node >= 22, keine Abhängigkeiten (node:sqlite eingebaut)
 'use strict';
 process.removeAllListeners('warning');
@@ -275,7 +275,7 @@ async function importSpielplan(pid) {
     const url = page === 1 ? 'https://maerchenhuetten.com/spielplan/' : `https://maerchenhuetten.com/spielplan/page/${page}/`;
     let html;
     try {
-      const r = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (Macintosh) Huettenplan/1.0' }, signal: AbortSignal.timeout(20000) });
+      const r = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (Macintosh) bijoubijou/1.0' }, signal: AbortSignal.timeout(20000) });
       if (!r.ok) { if (page === 1) netError = `Seite antwortet mit Fehler ${r.status}`; break; }
       html = await r.text();
     } catch (e) { if (page === 1) netError = `maerchenhuetten.com nicht erreichbar (${e.cause?.code || e.name || e.message}) – Internetverbindung prüfen`; break; }
@@ -405,7 +405,7 @@ const server = http.createServer(async (req, res) => {
       if (!me) { res.writeHead(401); return res.end('token?'); }
       const st = personStats(me.id, null);
       const esc = s => String(s).replace(/[,;]/g, m => '\\' + m);
-      let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Huettenplan//DE\r\nX-WR-CALNAME:Märchenhütten Schichten\r\n';
+      let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//bijoubijou//DE\r\nX-WR-CALNAME:Märchenhütten Schichten\r\n';
       for (const l of st.lines) {
         const d = l.date.replace(/-/g, ''); const endD = toMin(l.end) < toMin(l.arrive) ? addDays(l.date, 1).replace(/-/g, '') : d;
         ics += `BEGIN:VEVENT\r\nUID:${d}${l.arrive.replace(':', '')}${l.gewerk}@huettenplan\r\nDTSTART;TZID=Europe/Berlin:${d}T${l.arrive.replace(':', '')}00\r\nDTEND;TZID=Europe/Berlin:${endD}T${l.end.replace(':', '')}00\r\nSUMMARY:${esc(l.gewerk)} Märchenhütten\r\nDESCRIPTION:Kommzeit ${l.arrive} (${l.kind}schicht)\r\nLOCATION:Märchenhütten Monbijoupark\r\nEND:VEVENT\r\n`;
@@ -640,7 +640,7 @@ const server = http.createServer(async (req, res) => {
         log(me.id, 'settings', Object.keys(body).join(',')); broadcast({ type: 'settings' }); return json(res, 200, { ok: true });
       }
       if (p === '/api/log') { if (!admin) return json(res, 403, {}); return json(res, 200, all('SELECT l.*,p.name FROM log l LEFT JOIN people p ON p.id=l.person_id ORDER BY l.id DESC LIMIT 300')); }
-      if (p === '/api/backup' && need(admin)) { res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-disposition': 'attachment; filename="huettenplan-backup.sqlite"' }); db.exec('PRAGMA wal_checkpoint(FULL)'); return fs.createReadStream(path.join(DATA_DIR, 'huettenplan.sqlite')).pipe(res); }
+      if (p === '/api/backup' && need(admin)) { res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-disposition': 'attachment; filename="bijoubijou-backup.sqlite"' }); db.exec('PRAGMA wal_checkpoint(FULL)'); return fs.createReadStream(path.join(DATA_DIR, 'huettenplan.sqlite')).pipe(res); }
       return json(res, 404, { error: 'unbekannt' });
     }
 
@@ -656,4 +656,4 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log(`Hüttenplan läuft auf http://localhost:${PORT}  (Admin-PIN beim ersten Start: 1234)`));
+server.listen(PORT, () => console.log(`bijoubijou läuft auf http://localhost:${PORT}  (Admin-PIN beim ersten Start: 1234)`));

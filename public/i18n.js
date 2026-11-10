@@ -1,4 +1,4 @@
-/* Hüttenplan – Sprachumschalter Deutsch/English
+/* bijoubijou – Sprachumschalter Deutsch/English
    Die App ist auf Deutsch geschrieben. Dieses Skript übersetzt auf Wunsch (Knopf „DE | EN“ oben) die sichtbaren Texte,
    Platzhalter, Tooltips, Rückfragen und Meldungen ins Englische. Nicht übersetzte Texte (z. B. Namen, Titel, Chat) bleiben unverändert.
    Neue deutsche Texte in der App bleiben in der englischen Ansicht einfach deutsch, bis sie hier ergänzt werden. */
@@ -202,7 +202,7 @@
     lang = l === 'en' ? 'en' : 'de';
     try { localStorage.setItem('hp_lang', lang); } catch (e) { /* egal */ }
     document.documentElement.lang = lang;
-    document.title = lang === 'en' ? 'Hüttenplan – shift schedule' : 'Hüttenplan';
+    document.title = lang === 'en' ? 'bijoubijou – shift schedule' : 'bijoubijou';
     // Oberfläche aus dem deutschen Original neu aufbauen; der Beobachter übersetzt sie wieder
     try { if (typeof S !== 'undefined' && S.me) render(); else if (typeof renderLogin === 'function') renderLogin(); } catch (e) { /* noch nicht gestartet */ }
     ui();

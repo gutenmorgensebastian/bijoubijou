@@ -1,4 +1,4 @@
-# Hüttenplan – Hinweise für Claude
+# bijoubijou – Hinweise für Claude
 
 Kleine Web-App (Node 22+, SQLite, kein npm). Server: `server.js`, Oberfläche: `public/app.js` + `public/style.css`. Sprache der App und der Antworten: Deutsch.
 
